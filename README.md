@@ -26,7 +26,7 @@ e.g.
 compareEncoding.py
 └── h264
     └── test.mp4
-└── ao
+└── hevc
     ├── test-rf18.mp4
     └── test-rf24.mp4
 ```
