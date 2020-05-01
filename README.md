@@ -3,7 +3,7 @@ python script to compare H.264 and HEVC rips of the same file
 
 
 #### usage:
-`python compareEncoding.py <filename.mp4> <numComparisonFrames> -s/--stack`
+`python3 compareEncoding.py <filename>.mp4 <num_comparison_frames> -s/--stack`
 
 e.g.
 `python3 compareEncoding.py all`
@@ -14,7 +14,6 @@ or
 #### dependencies:
 [numpy](https://pypi.org/project/numpy/)<br>
 [cv2](https://pypi.org/project/opencv-python/)
-
 
 Assumes that H.264 and HEVC encodes have the same base filename and live in "h264" and "hevc" directories relative to compareEncoding.py:<br>
 <img src="https://i.imgur.com/1hZwNnV.png" width="200"/>
