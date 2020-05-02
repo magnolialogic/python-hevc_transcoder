@@ -36,10 +36,8 @@ class MP4File(object):
 		pprint(vars(self))
 	
 	def map_preset(self):
-		# If 720P, 
-		# If 1080P
-		# If 
-		self.preset = "presets/auto.json"
+		# Select correct RF based on resolution/bitrate
+		self.preset = "presets/RF23.json"
 
 parser = argparse.ArgumentParser()
 group = parser.add_mutually_exclusive_group(required=True)

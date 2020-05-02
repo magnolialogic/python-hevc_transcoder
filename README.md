@@ -1,5 +1,5 @@
 #### Dependencies:
-[HandBrakeCLI](https://handbrake.fr/downloads2.php) on your `$PATH`
+[HandBrakeCLI](https://handbrake.fr/downloads2.php) and [ffmpeg](https://www.ffmpeg.org/download.html) on your `$PATH`
 
 [numpy](https://pypi.org/project/numpy/)
 
