@@ -9,15 +9,15 @@ import shlex
 import subprocess
 import sys
 
-if not set(["h264", "hevc"]).issubset(set(os.listdir())):
-	print("Invalid working directory, exiting.")
-	sys.exit(1)
-
 parser = argparse.ArgumentParser()
 parser.add_argument("filename", help="H264 filename")
 parser.add_argument("num_frames", nargs="?", default=5, type=int, help="Number of frames to generate")
 parser.add_argument("-s", "--stack", action="store_true", help="Also create 2-up stacked comparison")
 args = parser.parse_args()
+
+if not set(["h264", "hevc"]).issubset(set(os.listdir())):
+	print("Invalid working directory, exiting.")
+	sys.exit(1)
 
 if args.filename.lower() == "all":
 	h264_files = [filename for filename in os.listdir("h264") if os.path.splitext(filename)[1] == ".mp4"]
