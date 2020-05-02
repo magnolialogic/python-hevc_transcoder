@@ -1,6 +1,8 @@
 #### Dependencies:
 [HandBrakeCLI](https://handbrake.fr/downloads2.php) on your `$PATH`
-[numpy](https://pypi.org/project/numpy/)<br>
+
+[numpy](https://pypi.org/project/numpy/)
+
 [cv2](https://pypi.org/project/opencv-python/)
 
 # transcode.py
