@@ -9,14 +9,15 @@
 python script to transcode a given H.264 file to HEVC using preset with RF appropriate for resolution/bitrate (unless preset manually selected with `--preset` option)
 
 ```
-usage: transcode [-h] (-f FILE | --all) [-p PRESET]
+usage: transcode [-h] (--file FILE | --all) [--preset PRESET] [--delete]
 
 optional arguments:
   -h, --help            show this help message and exit
-  -f FILE, --file FILE  Relative path to H264 file (e.g. h264/example.mp4)
+  --file FILE, -f FILE  Relative path to H264 file (e.g. h264/example.mp4)
   --all                 Transcode all H264 files in h264 directory
-  -p PRESET, --preset PRESET
+  --preset PRESET, -p PRESET
                         Name of HandBrake JSON preset file
+  --delete              Delete output files when complete/interrupted
 ```
 
 

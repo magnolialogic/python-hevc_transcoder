@@ -61,10 +61,10 @@ class MP4(object):
 
 parser = argparse.ArgumentParser()
 group = parser.add_mutually_exclusive_group(required=True)
-group.add_argument("-f", "--file", help="Relative path to H264 file (e.g. h264/example.mp4)")
+group.add_argument("--file", "-f", help="Relative path to H264 file (e.g. h264/example.mp4)")
 group.add_argument("--all", action="store_true", help="Transcode all H264 files in h264 directory")
-parser.add_argument("-p", "--preset", help="Name of HandBrake JSON preset file", required=False)
-parser.add_argument("-d", "--delete", action="store_true", help="Delete output files when complete/interrupted")
+parser.add_argument("--preset", "-p", help="Name of HandBrake JSON preset file", required=False)
+parser.add_argument("--delete", action="store_true", help="Delete output files when complete/interrupted")
 args = parser.parse_args()
 valid_arguments = False
 
