@@ -1,6 +1,7 @@
 #!/usr/local/bin/python3
 
 import argparse
+from datetime import datetime
 import json
 import os
 import shlex
@@ -39,10 +40,10 @@ class MP4(object):
 			sys.exit(1)
 	
 	def summarize(self):
-		from pprint import pprint
+		import pprint
 		print()
 		print(self.filename)
-		pprint(vars(self))
+		pprint.pprint(vars(self))
 		print()
 	
 	def map_preset(self):
@@ -70,7 +71,7 @@ valid_arguments = False
 if not set(["h264", "hevc", "performance", "presets"]).issubset(set(os.listdir())):
 	print("FATAL: invalid working directory!")
 elif args.file and not os.path.exists(args.file):
-	print("FATAL: " + args.file + " not found!")
+	print("FATAL:", args.file, "not found!")
 elif args.preset and not os.path.exists("presets/" + args.preset + ".json"):
 	presets = [filename for filename in os.listdir("presets") if os.path.splitext(filename)[1] == ".json"]
 	if len(presets) == 0:
@@ -104,16 +105,19 @@ else:
 for file in source_files:
 	source = MP4(file)
 	if not os.path.exists(source.output_file):
-		# start_time
 		print(shlex.join(source.arguments))
-		with open(source.log, "w") as log, subprocess.Popen(source.arguments, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, bufsize=1) as process:
-			for line in process.stdout:
-				sys.stdout.write(line)
-				log.write(line)
-		# end_time
-		# elapsed_time
+		with open(source.log, "w") as log:
+			start_time = datetime.now()
+			with subprocess.Popen(source.arguments, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, bufsize=1) as process:
+				for line in process.stdout:
+					sys.stdout.write(line)
+					log.write(line)
+			end_time = datetime.now()
+			elapsed_time = end_time - start_time
+			sys.stdout(write(elapsed_time))
+			log.write(str(elapsed_time))
 	else:
-		print(source.output_file + " already exists, skipping.")
+		print(source.output_file, "already exists, skipping.")
 	print()
 	if args.delete: source.cleanup()
 
