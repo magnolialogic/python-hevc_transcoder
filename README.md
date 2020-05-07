@@ -7,7 +7,7 @@ Tools to transcode video files into HEVC, experiment with different encoder pres
 python script to transcode movies to HEVC using custom encoder options based on source file's resolution. This has only been tested with H.264 MP4 files, but should work with source files with any of the following extensions: ".mp4", ".m4v", ".mov", ".mkv", ".mpg", ".mpeg", ".avi", ".wmv", ".flv", ".webm", ".ts" but YMMV.
 
 ```
-usage: transcode [-h] (-f FILE | --all) [-q QUALITY] [--preset PRESET] [--baseline | --best] [--small] [--delete]
+usage: transcode.py [-h] (-f FILE | --all) [-q QUALITY] [--preset PRESET] [--baseline | --best] [--small] [--delete]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -26,7 +26,7 @@ optional arguments:
 <br>
 
 ## compareEncoding.py
-python script to compare screenshots of source and transcoded files
+python script to compare screenshots of source and transcoded files.
 
 ```
 usage: compareEncoding.py [-h] [-s] filename [num_frames]
@@ -46,13 +46,10 @@ optional arguments:
 ## Notes:
 
 ### Dependencies:
-python >= 3.8 at `/usr/local/bin/python3`
-
-[HandBrakeCLI](https://handbrake.fr/downloads2.php) and [ffmpeg](https://www.ffmpeg.org/download.html) on your `$PATH`
-
-[numpy](https://pypi.org/project/numpy/)
-
-[cv2](https://pypi.org/project/opencv-python/)
+* python >= 3.8 at `/usr/local/bin/python3`
+* [HandBrakeCLI](https://handbrake.fr/downloads2.php) and [ffmpeg](https://www.ffmpeg.org/download.html) on your `$PATH`
+* [numpy](https://pypi.org/project/numpy/)
+* [cv2](https://pypi.org/project/opencv-python/)
 
 <br>
 <br>
@@ -72,6 +69,6 @@ compareEncoding.py
 <br>
 <br>
 
-#### Assumptions:
+### Assumptions:
 Assumes that H.264 and HEVC encodes have the same base filename and live in "h264" and "hevc" directories relative to compareEncoding.py and transcode.py:<br>
 <img src="https://i.imgur.com/1hZwNnV.png" width="200"/>
