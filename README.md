@@ -21,8 +21,10 @@ optional arguments:
   --small               use additional encoder options to minimize filesize at the expense of speed
   --delete              delete output files when complete/interrupted
 ```
+
 <br>
 <br>
+
 ## compareEncoding.py
 python script to compare screenshots of source and transcoded files
 
@@ -37,8 +39,10 @@ optional arguments:
   -h, --help   show this help message and exit
   -s, --stack  Also create 2-up stacked comparison
 ```
+
 <br>
 <br>
+
 ## Notes:
 
 ### Dependencies:
@@ -59,8 +63,10 @@ compareEncoding.py
     ├── test-RF18.mp4
     └── test-RF24.mp4
 ```
+
 <br>
 <br>
+
 #### Assumptions:
 Assumes that H.264 and HEVC encodes have the same base filename and live in "h264" and "hevc" directories relative to compareEncoding.py and transcode.py:<br>
 <img src="https://i.imgur.com/1hZwNnV.png" width="200"/>
