@@ -2,30 +2,26 @@
 
 import argparse
 import cv2
-import json
 import numpy as np
 import os
-import shlex
 import subprocess
 import sys
 
 parser = argparse.ArgumentParser()
 parser.add_argument("filename", help="Source filename")
-parser.add_argument("num_frames", nargs="?", default=5, type=int, help="Number of frames to generate")
+parser.add_argument("num_frames", nargs="?", default=5, type=int, help="Number of comparison frames to generate")
 parser.add_argument("-s", "--stack", action="store_true", help="Also create 2-up stacked comparison")
 args = parser.parse_args()
 
 if not set(["source", "hevc"]).issubset(set(os.listdir())):
-	print("Invalid working directory, exiting.")
-	sys.exit(1)
+	sys.exit("Invalid working directory, exiting.")
 
 if args.filename.lower() == "all":
 	source_files = [filename for filename in os.listdir("source") if os.path.splitext(filename)[1] == ".mp4"]
 elif args.filename.endswith(".mp4"):
 	source_files = [args.filename]
 else:
-	print("Invalid filename, exiting.")
-	sys.exit(1)
+	sys.exit("Invalid filename, exiting.")
 
 print("\nComparison frames:\t{frames}".format(frames=args.num_frames))
 
@@ -69,4 +65,4 @@ for source_file in source_files:
 
 	source_file_handle.release()
 
-sys.exit(0)
+sys.exit("Done.")

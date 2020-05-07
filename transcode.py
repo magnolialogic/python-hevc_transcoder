@@ -122,6 +122,7 @@ class Session():
 	
 	def signal_handler(self, sig, frame):
 		self.cleanup()
+		sys.exit("Caught ^c: exiting.")
 	
 	def cleanup(self):
 		if args.delete:

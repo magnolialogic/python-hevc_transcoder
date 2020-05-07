@@ -1,14 +1,7 @@
-#### Dependencies:
-python >= 3.8 at `/usr/local/bin/python3`
+# python-hevc_encoder
 
-[HandBrakeCLI](https://handbrake.fr/downloads2.php) and [ffmpeg](https://www.ffmpeg.org/download.html) on your `$PATH`
-
-[numpy](https://pypi.org/project/numpy/)
-
-[cv2](https://pypi.org/project/opencv-python/)
-
-# transcode.py
-python script to transcode movies to HEVC using custom encoder options based on source file's resolution
+## transcode.py
+python script to transcode movies to HEVC using custom encoder options based on source file's resolution. This has only been tested with H.264 MP4 files, but should work with source files with any of the following extensions: ".mp4", ".m4v", ".mov", ".mkv", ".mpg", ".mpeg", ".avi", ".wmv", ".flv", ".webm", ".ts" but YMMV.
 
 ```
 usage: transcode [-h] (-f FILE | --all) [-q QUALITY] [--preset PRESET] [--baseline | --best] [--small] [--delete]
@@ -26,7 +19,8 @@ optional arguments:
   --delete              delete output files when complete/interrupted
 ```
 
-# compareEncoding.py
+
+## compareEncoding.py
 python script to compare screenshots of source and transcoded files
 
 
@@ -34,13 +28,27 @@ python script to compare screenshots of source and transcoded files
 usage: compareEncoding.py [-h] [-s] filename [num_frames]
 
 positional arguments:
-  filename     H264 filename
-  num_frames   Number of frames to generate
+  filename     Source filename
+  num_frames   Number of comparison frames to generate
 
 optional arguments:
   -h, --help   show this help message and exit
   -s, --stack  Also create 2-up stacked comparison
 ```
+
+
+#### Dependencies:
+python >= 3.8 at `/usr/local/bin/python3`
+
+[HandBrakeCLI](https://handbrake.fr/downloads2.php) and [ffmpeg](https://www.ffmpeg.org/download.html) on your `$PATH`
+
+[numpy](https://pypi.org/project/numpy/)
+
+[cv2](https://pypi.org/project/opencv-python/)
+
+
+
+#### Tips:
 
 You can also compare multiple encodes created with different presets by appending preset names to the HEVC filename.
 
@@ -50,8 +58,8 @@ compareEncoding.py
 └── source 
     └── test.mp4
 └── hevc
-    ├── test-rf18.mp4
-    └── test-rf24.mp4
+    ├── test-RF18.mp4
+    └── test-RF24.mp4
 ```
 
 #### Assumptions:
