@@ -133,15 +133,15 @@ class Session():
 # Define command-line arguments
 parser = argparse.ArgumentParser()
 files_group = parser.add_mutually_exclusive_group(required=True)
-files_group.add_argument("-f", "--file", help="Filename of movie in source directory")
-files_group.add_argument("--all", action="store_true", help="Transcode all supported movies in source directory")
+files_group.add_argument("-f", "--file", help="filename of movie in source directory")
+files_group.add_argument("--all", action="store_true", help="transcode all supported movies in source directory")
 parser.add_argument("-q", "--quality", type=int, help="HandBrake quality slider value (-12,51)")
 preset_group = parser.add_mutually_exclusive_group(required=False)
-preset_group.add_argument("--baseline", action="store_true", help="Use baseline preset")
-preset_group.add_argument("--best", action="store_true", help="Use highest quality preset")
-parser.add_argument("--preset", help="Override video encoder preset")
-parser.add_argument("--small", action="store_true", help="Add additional encoder options to minimize filesize at the expense of speed")
-parser.add_argument("--delete", action="store_true", help="Delete output files when complete/interrupted")
+preset_group.add_argument("--baseline", action="store_true", help="use baseline options")
+preset_group.add_argument("--best", action="store_true", help="use highest quality options")
+parser.add_argument("--preset", help="override video encoder preset")
+parser.add_argument("--small", action="store_true", help="add additional encoder options to minimize filesize at the expense of speed")
+parser.add_argument("--delete", action="store_true", help="delete output files when complete/interrupted")
 args = parser.parse_args()
 valid_arguments = False
 

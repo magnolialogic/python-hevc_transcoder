@@ -15,15 +15,14 @@ usage: transcode [-h] (-f FILE | --all) [-q QUALITY] [--baseline | --best] [--pr
 
 optional arguments:
   -h, --help            show this help message and exit
-  -f FILE, --file FILE  Filename of movie in source directory
-  --all                 Transcode all supported movies in source directory
+  -f FILE, --file FILE  filename of movie in source directory
+  --all                 transcode all supported movies in source directory
   -q QUALITY, --quality QUALITY
                         HandBrake quality slider value (-12,51)
-  --baseline            Use baseline preset
-  --best                Use highest quality preset
-  --preset PRESET       Override video encoder preset
-  --small               Add additional encoder options to minimize filesize at the expense of speed
-  --delete              Delete output files when complete/interrupted
+  --baseline            use baseline options
+  --best                use highest quality options
+  --preset PRESET       override video encoder preset
+  --small               add additional encoder options to minimize filesize at the expense of speed
 ```
 
 # compareEncoding.py
