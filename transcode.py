@@ -4,122 +4,201 @@ import argparse
 from datetime import datetime
 import json
 import os
+from pprint import pprint
 import shlex
 import signal
 import subprocess
 import sys
 
-class MP4(object):
-	def __init__(self, path):
+class Session():
+	class Quality:
+		class Low:
+			RF = 210 # 18-22
+			CTU = "32"
+			QG_SIZE = "16"
+		
+		class Medium:
+			RF = 22 # 19-23
+			CTU = "32"
+			QG_SIZE = "32"
+		
+		class High:
+			RF = 23 # 20-24
+			CTU = "64"
+			QG_SIZE = "64"
+		
+		class Ultra:
+			RF = 26 # 22-28
+			CTU = "64"
+			QG_SIZE = "64"
+	
+	def __init__(self, file):
 		signal.signal(signal.SIGINT, self.signal_handler)
-		cmd = "ffprobe -v quiet -print_format json -show_streams " + path
+		
+		# Get source file metadata
+		cmd = "ffprobe -v quiet -print_format json -show_streams " + file
 		metadata = subprocess.check_output(shlex.split(cmd)).decode("utf-8")
 		metadata = json.loads(metadata)["streams"][0]
-		self.input_file = path
+		
+		# Populate metadata-based attributes
+		self.source_path = file
 		self.height = int(metadata["height"])
 		self.width = int(metadata["width"])
 		self.duration = metadata["duration"]
-		self.filename = os.path.splitext(os.path.relpath(self.input_file, "h264"))[0]
-		self.filesize = os.path.getsize(self.input_file)
+		self.filename = os.path.splitext(os.path.relpath(self.source_path, "source"))[0]
+		self.filesize = os.path.getsize(self.source_path)
 		self.bitrate = metadata["bit_rate"]
 		self.codec = metadata["codec_name"]
-		if args.preset:
-			self.preset_name = args.preset
-			self.preset_file = "presets/" + args.preset + ".json"
-		else:
-			self.map_preset()
-		self.output_file = "hevc/" + self.filename + "_" + self.preset_name + ".mp4"
-		self.log = "performance/" + self.filename + "-" + self.preset_name + ".log"
-		self.arguments = shlex.split("HandBrakeCLI --preset-import-file " + self.preset_file + " --preset " + self.preset_name + " --input " + self.input_file + " --output " + self.output_file + " --optimize")
+		
+		# Create empty attributes for dynamic session options
+		self.quality = None
+		self.preset = None
+		self.preset_name = None
+		self.encopts = None
+		
+		# Construct session options and parameters
+		self.map_options()
+		self.output_filename_decorator = "_RF" + str(self.quality)
+		if args.best:
+			self.output_filename_decorator += "_Best"
+		elif args.baseline:
+			self.output_filename_decorator += "_Baseline"
+		if args.small:
+			self.output_filename_decorator += "_Small"
+		self.output_path = "hevc/" + self.filename + self.output_filename_decorator + ".mp4"
+		self.log_path = "performance/" + self.filename + self.output_filename_decorator + ".log"
+		
+		# Build HandBrakeCLI command
+		self.arguments = "HandBrakeCLI --encoder-preset {video_preset} --preset-import-file presets.json --preset {preset_name} --quality {quality} --encopts {encopts} --input {source_path} --output {output_path}".format(video_preset=self.preset, preset_name=self.preset_name, quality=str(self.quality), encopts=self.encopts, source_path=self.source_path, output_path=self.output_path)
+		
+		# Validate and finish
 		self.validate()
 		self.summarize()
 	
 	def validate(self):
 		if any(value is None for attribute, value in self.__dict__.items()):
-			print("FATAL: MP4.validate(): found null attribute for " + self.input_file)
+			print("FATAL: Session.validate(): found null attribute for " + self.source_path)
 			sys.exit(1)
 	
 	def summarize(self):
-		import pprint
 		print()
-		print(self.filename)
-		pprint.pprint(vars(self))
+		print(self.source_path)
+		pprint(vars(self))
 		print()
 	
-	def map_preset(self):
-		# Select correct RF based on resolution/bitrate
-		self.preset_name = "RF23"
-		self.preset_file = "presets/RF23.json"
+	def map_options(self):
+		# Start with settings based on source resolution
+		if self.height < 720:
+			self.quality = self.Quality.Low.RF
+			self.encopts = "ctu=" + self.Quality.Low.CTU + ":qg-size=" + self.Quality.Low.QG_SIZE
+		elif 720 <= self.height < 1080:
+			self.quality = self.Quality.Medium.RF
+			self.encopts = "ctu=" + self.Quality.Medium.CTU + ":qg-size=" + self.Quality.Medium.QG_SIZE
+		elif 1080 <= self.height < 2160:
+			self.quality = self.Quality.High.RF
+			self.encopts = "ctu=" + self.Quality.High.CTU + ":qg-size=" + self.Quality.High.QG_SIZE
+		elif 2160 <= self.height:
+			self.quality = self.Quality.Ultra.RF
+			self.encopts = "ctu=" + self.Quality.Ultra.CTU + ":qg-size=" + self.Quality.Ultra.QG_SIZE
+		
+		# Override defaults based on command-line arguments
+		if args.best:
+			self.preset_name = "Best"
+		elif args.baseline:
+			self.preset_name = "Baseline"
+		else:
+			self.preset_name = "Default"
+		
+		if args.preset:
+			self.preset = args.preset.lower()
+		else:
+			self.preset = "slow"
+		
+		if args.quality:
+			self.quality = args.quality
+		
+		if args.small:
+			self.encopts += ":tu-intra-depth=3:tu-inter-depth=3"
 	
 	def signal_handler(self, sig, frame):
 		self.cleanup()
 	
 	def cleanup(self):
 		if args.delete:
-			if os.path.exists(source.output_file): os.remove(source.output_file)
-			if os.path.exists(source.log): os.remove(source.log)
+			if os.path.exists(self.output_path):
+				os.remove(self.output_path)
+			if os.path.exists(self.log_path):
+				os.remove(self.log_path)
 
+# Define command-line arguments
 parser = argparse.ArgumentParser()
-group = parser.add_mutually_exclusive_group(required=True)
-group.add_argument("--file", "-f", help="Relative path to H264 file (e.g. h264/example.mp4)")
-group.add_argument("--all", action="store_true", help="Transcode all H264 files in h264 directory")
-parser.add_argument("--preset", "-p", help="Name of HandBrake JSON preset file", required=False)
+files_group = parser.add_mutually_exclusive_group(required=True)
+files_group.add_argument("-f", "--file", help="Filename of movie in source directory")
+files_group.add_argument("--all", action="store_true", help="Transcode all supported movies in source directory")
+parser.add_argument("-q", "--quality", type=int, help="HandBrake quality slider value (-12,51)")
+preset_group = parser.add_mutually_exclusive_group(required=False)
+preset_group.add_argument("--baseline", action="store_true", help="Use baseline preset")
+preset_group.add_argument("--best", action="store_true", help="Use highest quality preset")
+parser.add_argument("--preset", help="Override video encoder preset")
+parser.add_argument("--small", action="store_true", help="Add additional encoder options to minimize filesize at the expense of speed")
 parser.add_argument("--delete", action="store_true", help="Delete output files when complete/interrupted")
 args = parser.parse_args()
 valid_arguments = False
 
-if not set(["h264", "hevc", "performance", "presets"]).issubset(set(os.listdir())):
+# Validate command-line arguments
+if not set(["source", "presets.json"]).issubset(set(os.listdir())):
 	print("FATAL: invalid working directory!")
 elif args.file and not os.path.exists(args.file):
 	print("FATAL:", args.file, "not found!")
-elif args.preset and not os.path.exists("presets/" + args.preset + ".json"):
-	presets = [filename for filename in os.listdir("presets") if os.path.splitext(filename)[1] == ".json"]
-	if len(presets) == 0:
-		print("FATAL: no .json preset found in presets directory.")
-	else:
-		print("FATAL: must use one of the following presets:")
-		for preset in sorted(presets):
-			print(" " + os.path.splitext(preset)[0])
+elif args.preset and not args.preset.lower() in ("ultrafast", "superfast", "veryfast", "faster", "fast", "medium", "slow", "slower", "veryslow", "placebo"):
+	print("FATAL:", args.preset, "not valid!")
+elif args.quality and not args.quality in range(-12, 51):
+	print("FATAL: quality must be between -12 and 51 (lower is slower/higher quality)")
 else:
 	valid_arguments = True
 if not valid_arguments:
 	sys.exit("Invalid command-line arguments.")
-elif args.all and args.preset:
-	print("Warning! Combining --all and --preset options is not recommended and may not produce optimal HEVC transcodes.")
+elif args.all and args.quality:
+	print("Warning! Combining --all and --quality options is not recommended and may not produce optimal HEVC transcodes.")
 	while "need response":
 		reply = str(input("Proceed? (y/n) " )).lower().strip()
 		if reply[0] == "y":
 			break
 		if reply[0] == "n":
-			sys.exit("Aborting invocation with --all and --preset options.")
+			sys.exit("Aborting invocation with --all and --quality options.")
 
-source_files = []
-
+# Build list of source files
+extensions = [".mp4", ".m4v", ".mov", ".mkv", ".mpg", ".mpeg", ".avi", ".wmv", ".flv", ".webm", ".ts"]
 if args.all:
-	for file in os.listdir("h264"):
-		if file.endswith(".mp4"):
-			source_files.append("h264/" + file)
+	source_files = ["source/" + file for file in os.listdir("source") if file[file.rindex("."):].lower() in extensions]
 else:
-	source_files.append(args.file)
+	source_files = [args.file]
 
+# Do the thing
+if not os.path.exists("performance"):
+	os.mkdir("performance")
+if not os.path.exists("hevc"):
+	os.mkdir("hevc")
 for file in source_files:
-	source = MP4(file)
-	if not os.path.exists(source.output_file):
-		print(shlex.join(source.arguments))
-		with open(source.log, "w") as log:
+	session = Session(file)
+	if not os.path.exists(session.output_path):
+		with open(session.log_path, "w") as log:
+			print(session.arguments)
+			print()
 			start_time = datetime.now()
-			with subprocess.Popen(source.arguments, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, bufsize=1) as process:
+			with subprocess.Popen(shlex.split(session.arguments, posix=False), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, bufsize=1) as process:
 				for line in process.stdout:
 					sys.stdout.write(line)
 					log.write(line)
 			end_time = datetime.now()
 			elapsed_time = end_time - start_time
-			sys.stdout(write(elapsed_time))
+			sys.stdout.write(str(elapsed_time))
 			log.write(str(elapsed_time))
+			# add fps
 	else:
-		print(source.output_file, "already exists, skipping.")
+		print(session.output_path, "already exists, skipping.")
+	if args.delete:
+		session.cleanup()
 	print()
-	if args.delete: source.cleanup()
 
-# Add date to "done" print
-sys.exit("Done.\n")
+sys.exit("{date}: Done.\n".format(date=str(datetime.now())))

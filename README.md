@@ -1,4 +1,6 @@
 #### Dependencies:
+python >= 3.8 at `/usr/local/bin/python3`
+
 [HandBrakeCLI](https://handbrake.fr/downloads2.php) and [ffmpeg](https://www.ffmpeg.org/download.html) on your `$PATH`
 
 [numpy](https://pypi.org/project/numpy/)
@@ -6,26 +8,30 @@
 [cv2](https://pypi.org/project/opencv-python/)
 
 # transcode.py
-python script to transcode a given H.264 file to HEVC using preset with RF appropriate for resolution/bitrate (unless preset manually selected with `--preset` option)
+python script to transcode movies to HEVC using custom encoder options based on source file's resolution
 
 ```
-usage: transcode [-h] (--file FILE | --all) [--preset PRESET] [--delete]
+usage: transcode [-h] (-f FILE | --all) [-q QUALITY] [--baseline | --best] [--preset PRESET] [--small] [--delete]
 
 optional arguments:
   -h, --help            show this help message and exit
-  --file FILE, -f FILE  Relative path to H264 file (e.g. h264/example.mp4)
-  --all                 Transcode all H264 files in h264 directory
-  --preset PRESET, -p PRESET
-                        Name of HandBrake JSON preset file
+  -f FILE, --file FILE  Filename of movie in source directory
+  --all                 Transcode all supported movies in source directory
+  -q QUALITY, --quality QUALITY
+                        HandBrake quality slider value (-12,51)
+  --baseline            Use baseline preset
+  --best                Use highest quality preset
+  --preset PRESET       Override video encoder preset
+  --small               Add additional encoder options to minimize filesize at the expense of speed
   --delete              Delete output files when complete/interrupted
 ```
 
-
 # compareEncoding.py
-python script to compare H.264 and HEVC rips of the same file.
+python script to compare screenshots of source and transcoded files
+
 
 ```
-usage: compareEncoding [-h] [-s] filename [num_frames]
+usage: compareEncoding.py [-h] [-s] filename [num_frames]
 
 positional arguments:
   filename     H264 filename
@@ -41,7 +47,7 @@ You can also compare multiple encodes created with different presets by appendin
 e.g.
 ```
 compareEncoding.py
-└── h264
+└── source 
     └── test.mp4
 └── hevc
     ├── test-rf18.mp4
