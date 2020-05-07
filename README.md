@@ -47,11 +47,16 @@ optional arguments:
 
 ### Dependencies:
 python >= 3.8 at `/usr/local/bin/python3`
+
 [HandBrakeCLI](https://handbrake.fr/downloads2.php) and [ffmpeg](https://www.ffmpeg.org/download.html) on your `$PATH`
+
 [numpy](https://pypi.org/project/numpy/)
+
 [cv2](https://pypi.org/project/opencv-python/)
+
 <br>
 <br>
+
 ### Tips:
 You can also compare multiple encodes created with different presets by appending preset names to the HEVC filename.
 e.g.
