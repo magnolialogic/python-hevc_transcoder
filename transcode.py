@@ -11,26 +11,22 @@ import subprocess
 import sys
 
 class Session():
-	class Quality:
+	class Settings:
 		class Low:
-			RF = 210 # 18-22
-			CTU = "32"
-			QG_SIZE = "16"
+			RF = 21 # 18-22
+			ENCOPTS = "ctu=32:qg-size:16"
 		
 		class Medium:
 			RF = 22 # 19-23
-			CTU = "32"
-			QG_SIZE = "32"
+			ENCOPTS = "ctu=32:qg-size:32"
 		
 		class High:
 			RF = 23 # 20-24
-			CTU = "64"
-			QG_SIZE = "64"
+			ENCOPTS = "ctu=64:qg-size:64"
 		
 		class Ultra:
 			RF = 26 # 22-28
-			CTU = "64"
-			QG_SIZE = "64"
+			ENCOPTS = "ctu=64:qg-size:64"
 	
 	def __init__(self, file):
 		signal.signal(signal.SIGINT, self.signal_handler)
@@ -77,8 +73,7 @@ class Session():
 	
 	def validate(self):
 		if any(value is None for attribute, value in self.__dict__.items()):
-			print("FATAL: Session.validate(): found null attribute for " + self.source_path)
-			sys.exit(1)
+			sys.exit("FATAL: Session.validate(): found null attribute for " + self.source_path)
 	
 	def summarize(self):
 		print()
@@ -89,17 +84,17 @@ class Session():
 	def map_options(self):
 		# Start with settings based on source resolution
 		if self.height < 720:
-			self.quality = self.Quality.Low.RF
-			self.encopts = "ctu=" + self.Quality.Low.CTU + ":qg-size=" + self.Quality.Low.QG_SIZE
+			self.quality = self.Settings.Low.RF
+			self.encopts = self.Settings.Low.ENCOPTS
 		elif 720 <= self.height < 1080:
-			self.quality = self.Quality.Medium.RF
-			self.encopts = "ctu=" + self.Quality.Medium.CTU + ":qg-size=" + self.Quality.Medium.QG_SIZE
+			self.quality = self.Settings.Medium.RF
+			self.encopts = self.Settings.Medium.ENCOPTS
 		elif 1080 <= self.height < 2160:
-			self.quality = self.Quality.High.RF
-			self.encopts = "ctu=" + self.Quality.High.CTU + ":qg-size=" + self.Quality.High.QG_SIZE
+			self.quality = self.Settings.High.RF
+			self.encopts = self.Settings.High.ENCOPTS
 		elif 2160 <= self.height:
-			self.quality = self.Quality.Ultra.RF
-			self.encopts = "ctu=" + self.Quality.Ultra.CTU + ":qg-size=" + self.Quality.Ultra.QG_SIZE
+			self.quality = self.Settings.Ultra.RF
+			self.encopts = self.Settings.Ultra.ENCOPTS
 		
 		# Override defaults based on command-line arguments
 		if args.best:
@@ -162,7 +157,7 @@ if not valid_arguments:
 elif args.all and args.quality:
 	print("Warning! Combining --all and --quality options is not recommended and may not produce optimal HEVC transcodes.")
 	while "need response":
-		reply = str(input("Proceed? (y/n) " )).lower().strip()
+		reply = str(input("Proceed? (y/n) cccccccccc" )).lower().strip()
 		if reply[0] == "y":
 			break
 		if reply[0] == "n":
@@ -184,8 +179,10 @@ for file in source_files:
 	session = Session(file)
 	if not os.path.exists(session.output_path):
 		with open(session.log_path, "w") as log:
-			print(session.arguments)
-			print()
+			sys.stdout.write(session.arguments)
+			log.write(session.arguments)
+			sys.stdout.write("")
+			log.write("")
 			start_time = datetime.now()
 			with subprocess.Popen(shlex.split(session.arguments, posix=False), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, bufsize=1) as process:
 				for line in process.stdout:
@@ -195,7 +192,6 @@ for file in source_files:
 			elapsed_time = end_time - start_time
 			sys.stdout.write(str(elapsed_time))
 			log.write(str(elapsed_time))
-			# add fps
 	else:
 		print(session.output_path, "already exists, skipping.")
 	if args.delete:
