@@ -45,7 +45,7 @@ optional arguments:
 
 ## Notes:
 
-### Dependencies:
+### _Dependencies:_
 * python >= 3.8 at `/usr/local/bin/python3`
 * [HandBrakeCLI](https://handbrake.fr/downloads2.php) and [ffmpeg](https://www.ffmpeg.org/download.html) on your `$PATH`
 * [numpy](https://pypi.org/project/numpy/)
@@ -54,7 +54,7 @@ optional arguments:
 <br>
 <br>
 
-### Tips:
+### _Tips:_
 You can also compare multiple encodes created with different presets by appending preset names to the HEVC filename.
 e.g.
 ```
@@ -69,6 +69,6 @@ compareEncoding.py
 <br>
 <br>
 
-### Assumptions:
+### _Assumptions:_
 Assumes that H.264 and HEVC encodes have the same base filename and live in "h264" and "hevc" directories relative to compareEncoding.py and transcode.py:<br>
 <img src="https://i.imgur.com/1hZwNnV.png" width="200"/>
