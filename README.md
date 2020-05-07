@@ -11,7 +11,7 @@ python >= 3.8 at `/usr/local/bin/python3`
 python script to transcode movies to HEVC using custom encoder options based on source file's resolution
 
 ```
-usage: transcode [-h] (-f FILE | --all) [-q QUALITY] [--baseline | --best] [--preset PRESET] [--small] [--delete]
+usage: transcode [-h] (-f FILE | --all) [-q QUALITY] [--preset PRESET] [--baseline | --best] [--small] [--delete]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -19,10 +19,11 @@ optional arguments:
   --all                 transcode all supported movies in source directory
   -q QUALITY, --quality QUALITY
                         HandBrake quality slider value (-12,51)
-  --baseline            use baseline options
-  --best                use highest quality options
   --preset PRESET       override video encoder preset
-  --small               add additional encoder options to minimize filesize at the expense of speed
+  --baseline            use baseline encoder options
+  --best                use highest quality encoder options
+  --small               use additional encoder options to minimize filesize at the expense of speed
+  --delete              delete output files when complete/interrupted
 ```
 
 # compareEncoding.py
