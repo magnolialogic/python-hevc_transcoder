@@ -11,7 +11,9 @@ import subprocess
 import sys
 
 class Session():
+	
 	class Settings:
+		
 		class RF:
 			SD = 21
 			HD = 22
