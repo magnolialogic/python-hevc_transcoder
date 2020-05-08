@@ -10,10 +10,16 @@ import signal
 import subprocess
 import sys
 
+"""
+
+TODO:
+- convert all string paths into os.path objects
+- check for python3.8
+
+"""
+
 class Session():
-	
 	class Settings:
-		
 		class RF:
 			SD = 21
 			HD = 22
