@@ -14,23 +14,29 @@ import sys
 
 TODO:
 - convert all string paths into os.path objects
-- check for python3.8
+- allow comma-separated string for --preset, e.g. medium,slow,slower, map to list
+- add --matrix option to create default, best, small, best+small variants
+- add compression ratio / space saved to log + screen output
 
 """
+
+# Check for Python 3.8 (required for shlex usage)
+if not (sys.version_info[0] >= 3 and sys.version_info[1] >= 8):
+	sys.exit("FATAL: Requires Python3.8 or newer.")
 
 class Session():
 	class Settings:
 		class RF:
-			SD = 21
-			HD = 22
-			FHD = 23
-			UHD = 26
+			SD = 18
+			HD = 20
+			FHD = 21
+			UHD = 24
 		
 		class ENCOPTS:
 			SD = "ctu=32:qg-size=16"
 			HD = "ctu=32:qg-size=32"
 			FHD = "ctu=64:qg-size=64"
-			ENCOPTS = "ctu=64:qg-size=64"
+			UHD = "ctu=64:qg-size=64"
 	
 	def __init__(self, file):
 		signal.signal(signal.SIGINT, self.signal_handler)
@@ -41,8 +47,8 @@ class Session():
 		metadata = json.loads(metadata)["streams"][0]
 		
 		# Populate metadata-based attributes
-		self.paths = {"source": file}
-		self.source = {"height": int(metadata["height"]), "width": int(metadata["width"]), "duration": float(metadata["duration"]), "filename": os.path.splitext(os.path.relpath(self.paths["source"], "source"))[0], "filesize": os.path.getsize(self.paths["source"]), "bitrate": int(metadata["bit_rate"]), "frames": int(metadata["nb_frames"]), "codec": metadata["codec_name"]}
+		self.path = {"source": file}
+		self.source = {"height": int(metadata["height"]), "width": int(metadata["width"]), "duration": float(metadata["duration"]), "filename": os.path.splitext(os.path.relpath(self.path["source"], "source"))[0], "filesize": os.path.getsize(self.path["source"]), "bitrate": int(metadata["bit_rate"]), "frames": int(metadata["nb_frames"]), "codec": metadata["codec_name"]}
 		height = self.source["height"]
 		if height < 720:
 			resolution = "SD"
@@ -71,26 +77,25 @@ class Session():
 			self.file_decorator += "_Small"
 		if args.preset:
 			self.file_decorator += "_{preset}".format(preset=args.preset.capitalize())
-		self.paths["output"] = "hevc/" + self.source["filename"] + self.file_decorator + ".mp4"
-		self.paths["log"] = "performance/" + self.source["filename"] + self.file_decorator + ".log"
+		self.path["output"] = "hevc/" + self.source["filename"] + self.file_decorator + ".mp4"
+		self.path["log"] = "performance/" + self.source["filename"] + self.file_decorator + ".log"
 		
 		# Build HandBrakeCLI command
-		self.args = "HandBrakeCLI --encoder-preset {encoder_preset} --preset-import-file presets.json --preset {preset_name} --quality {quality} --encopts {encopts} --input {source_path} --output {output_path}".format(encoder_preset=self.encoder_preset, preset_name=self.preset_name, quality=str(self.encoder_quality), encopts=self.encoder_options, source_path=self.paths["source"], output_path=self.paths["output"])
+		self.args = "HandBrakeCLI --encoder-preset {encoder_preset} --preset-import-file presets.json --preset {preset_name} --quality {quality} --encopts {encopts} --input {source_path} --output {output_path}".format(encoder_preset=self.encoder_preset, preset_name=self.preset_name, quality=str(self.encoder_quality), encopts=self.encoder_options, source_path=self.path["source"], output_path=self.path["output"])
 		
-		# Validate and finish
+		# Verify no attributes are None
 		self.validate()
-		self.summarize()
 	
 	def validate(self):
 		"""	Verifies that no session attributes are null
 		"""
 		if any(value is None for attribute, value in self.__dict__.items()):
-			sys.exit("FATAL: Session.validate(): found null attribute for " + self.paths["source"])
+			sys.exit("FATAL: Session.validate(): found null attribute for " + self.path["source"])
 	
 	def summarize(self):
 		"""	Summarize transcode session before starting
 		"""
-		print("{date}: {source}:".format(date=str(datetime.now()), source=self.paths["source"]))
+		print("{date}: {source}:".format(date=str(datetime.now()), source=self.path["source"]))
 		pprint(vars(self))
 		print()
 	
@@ -122,7 +127,7 @@ class Session():
 	def log(self, elapsed_time, fps):
 		"""	Summarizes transcode session for screen and log
 		"""
-		with open(self.paths["log"], "w") as logfile:
+		with open(self.path["log"], "w") as logfile:
 			summary = str(elapsed_time) + "\n" + str(fps) + " fps"
 			logfile.write(summary + "\n\n" + session.args + "\n\n")
 			pprint(vars(self), logfile)
@@ -131,11 +136,11 @@ class Session():
 	def cleanup(self):
 		"""	Always deletes output file, deletes log if --delete is passed from command-line
 		"""
-		if os.path.exists(self.paths["output"]):
-				os.remove(self.paths["output"])
+		if os.path.exists(self.path["output"]):
+				os.remove(self.path["output"])
 		if args.delete:
-			if os.path.exists(self.paths["log"]):
-				os.remove(self.paths["log"])
+			if os.path.exists(self.path["log"]):
+				os.remove(self.path["log"])
 
 # Define command-line arguments
 parser = argparse.ArgumentParser()
@@ -187,26 +192,34 @@ if not os.path.exists("hevc"):
 
 # Do the thing
 start_time = datetime.now()
+skipped_files = []
 print("\n{date}: Starting transcode session for {source_files}\n".format(date=str(datetime.now()), source_files=str(source_files)))
 for file in source_files:
 	session = Session(file)
-	if not os.path.exists(session.paths["output"]):
+	if not os.path.exists(session.path["output"]):
+		session.summarize()
 		print(session.args + "\n")
 		session_start_time = datetime.now()
-		transcode = subprocess.Popen(shlex.split(session.args, posix=False))
+		transcode = subprocess.Popen(shlex.split(session.args, posix=False)) # Posix=False to escape double-quotes in arguments
 		transcode.wait()
 		session_end_time = datetime.now()
 		session_elapsed_time = session_end_time - session_start_time
 		fps = session.source["frames"] / session_elapsed_time.seconds
-		print("\n{date}: Finished {output_file}".format(date=str(session_end_time), output_file=session.paths["output"]))
+		print("\n{date}: Finished {output_file}".format(date=str(session_end_time), output_file=session.path["output"]))
 		session.log(session_elapsed_time, fps)
+		print("\n\n\n\n\n")
 	else:
-		print(session.paths["output"], "already exists, skipping.")
+		skipped_files.append(file)
 	if args.delete:
 		session.cleanup()
-	print("\n\n\n\n\n")
 
 end_time = datetime.now()
 elapsed_time = end_time - start_time
+
+if len(skipped_files) > 0:
+	print("Skipped:")
+	for file in skipped_files:
+		print(file)
+	print()
 
 sys.exit("{date}: Finished after {elapsed_time}.\n".format(date=str(datetime.now()), elapsed_time=elapsed_time))

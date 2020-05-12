@@ -8,7 +8,7 @@ import subprocess
 import sys
 
 parser = argparse.ArgumentParser()
-parser.add_argument("filename", help="Source filename")
+parser.add_argument("filename", help="Source filename (or \"all\" to compare all files which exist in both source/ and hevc/)")
 parser.add_argument("num_frames", nargs="?", default=5, type=int, help="Number of comparison frames to generate")
 parser.add_argument("-s", "--stack", action="store_true", help="Also create 2-up stacked comparison")
 args = parser.parse_args()
@@ -57,12 +57,12 @@ for source_file in source_files:
 			ret,hevc_frame = hevc_file_handle.read()
 			if args.stack:
 				comparison_frame = np.vstack((source_frame,hevc_frame))
-				cv2.imwrite(os.path.join(output_directory, "{number}-2up.png".format(number=frame)), comparison_frame)
-			cv2.imwrite(os.path.join(output_directory, "{number}-original.png".format(number=frame)), source_frame)
+				cv2.imwrite(os.path.join(output_directory, "{number}-2up.png".format(number=frame)), comparison_frame, [cv2.IMWRITE_PNG_COMPRESSION, 0])
+			cv2.imwrite(os.path.join(output_directory, "{number}-source.png".format(number=frame)), source_frame, [cv2.IMWRITE_PNG_COMPRESSION, 0])
 			cv2.imwrite(os.path.join(output_directory, "{number}-x265.png".format(number=frame)), hevc_frame)
 
 		hevc_file_handle.release()
 
 	source_file_handle.release()
 
-sys.exit("Done.")
+sys.exit("Done.\n")
