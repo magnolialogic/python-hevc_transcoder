@@ -12,7 +12,7 @@ usage: transcode.py [-h] (-f FILE | --all) [-q QUALITY] [--preset PRESET] [--bas
 
 optional arguments:
   -h, --help            show this help message and exit
-  -f FILE, --file FILE  filename of movie in source directory
+  -f FILE, --file FILE  relative path to movie in source directory
   --all                 transcode all supported movies in source directory
   -q QUALITY, --quality QUALITY
                         HandBrake quality slider value (-12,51)
