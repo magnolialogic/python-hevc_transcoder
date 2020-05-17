@@ -13,9 +13,7 @@ import sys
 """
 
 TODO:
-- convert all string paths into os.path objects
 - allow comma-separated string for --preset, e.g. medium,slow,slower, map to list
-- add compression ratio / space saved to log + screen output
 - ~~if presets.json does not exist, download from github~~
 
 """
@@ -125,11 +123,11 @@ class Session():
 		"""
 		self.cleanup()
 
-	def log(self, elapsed_time, fps):
+	def log(self, elapsed_time, fps, compression_ratio):
 		"""	Summarizes transcode session for screen and log
 		"""
 		with open(self.path["log"], "w") as logfile:
-			summary = str(elapsed_time) + "\n" + str(fps) + " fps"
+			summary = "{elapsed_time}\n{fps} fps\n{compression_ratio}% reduction".format(elapsed_time=elapsed_time, fps=fps, compression_ratio=compression_ratio)
 			logfile.write(summary + "\n\n" + session.args + "\n\n")
 			pprint(vars(self), logfile)
 			print(summary)
@@ -213,8 +211,11 @@ for file in source_files:
 	session_end_time = datetime.now()
 	session_elapsed_time = session_end_time - session_start_time
 	fps = session.source["frames"] / session_elapsed_time.seconds
+	source_file_size = session.source["filesize"] / 1000000
+	output_file_size = os.path.getsize(session.path["output"] / 1000000
+	compression_ratio = int(100 - (output_file_size / source_file_size * 100))
 	print("\n{date}: Finished {output_file}".format(date=str(session_end_time), output_file=session.path["output"]))
-	session.log(session_elapsed_time, fps)
+	session.log(session_elapsed_time, fps, compression_ratio)
 	print("\n\n\n\n\n")
 	if args.delete:
 		session.cleanup()
