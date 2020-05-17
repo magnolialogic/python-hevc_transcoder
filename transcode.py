@@ -115,7 +115,7 @@ class Session():
 		if args.preset:
 			self.encoder_preset = args.preset.lower()
 		else:
-			self.encoder_preset = "Slow"
+			self.encoder_preset = "slow"
 		if args.quality:
 			self.encoder_quality = args.quality
 		if args.small:
@@ -185,8 +185,9 @@ elif args.all and args.quality:
 extensions = [".mp4", ".m4v", ".mov", ".mkv", ".mpg", ".mpeg", ".avi", ".wmv", ".flv", ".webm", ".ts"]
 if args.all:
 	source_files = ["source/" + file for file in os.listdir("source") if os.path.splitext(file)[1].lower() in extensions]
-	print(source_files)
-	for source_file in source_files:
+else:
+	source_files = [args.file]
+for source_file in source_files:
 		session = Session(source_file)
 		if os.path.exists(session.path["output"]):
 			print("Skipping", source_file)
@@ -194,8 +195,6 @@ if args.all:
 		print(source_files)
 	if len(source_files) == 0:
 		sys.exit("All source files have already been transcoded. Exiting.")
-else:
-	source_files = [args.file]
 if not os.path.exists("performance"):
 	os.mkdir("performance")
 if not os.path.exists("hevc"):
