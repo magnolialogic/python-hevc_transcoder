@@ -15,7 +15,6 @@ import sys
 TODO:
 - convert all string paths into os.path objects
 - allow comma-separated string for --preset, e.g. medium,slow,slower, map to list
-- add --matrix option to create default, best, small, best+small variants
 - add compression ratio / space saved to log + screen output
 - ~~if presets.json does not exist, download from github~~
 
@@ -23,7 +22,7 @@ TODO:
 
 # Check for Python 3.8 (required for shlex usage)
 if not (sys.version_info[0] >= 3 and sys.version_info[1] >= 8):
-	sys.exit("FATAL: Requires Python3.8 or newer.")
+	sys.exit("FATAL: Requires Python3.8 or newer.\n")
 
 class Session():
 	class Settings:
@@ -97,7 +96,7 @@ class Session():
 	def summarize(self):
 		"""	Summarize transcode session before starting
 		"""
-		print("{date}: {source}:".format(date=str(datetime.now()), source=self.path["source"]))
+		print("{date}: Starting transcode session for {source}:".format(date=str(datetime.now()), source=self.path["source"]))
 		pprint(vars(self))
 		print()
 
@@ -171,7 +170,7 @@ elif args.quality and not args.quality in range(-12, 51):
 else:
 	valid_arguments = True
 if not valid_arguments:
-	sys.exit("Invalid command-line arguments.")
+	sys.exit("Invalid command-line arguments.\n")
 elif args.all and args.quality:
 	print("Warning! Combining --all and --quality options is not recommended and may not produce optimal HEVC transcodes.")
 	while "need response":
@@ -179,22 +178,24 @@ elif args.all and args.quality:
 		if reply[0] == "y":
 			break
 		if reply[0] == "n":
-			sys.exit("Aborting invocation with --all and --quality options.")
+			sys.exit("Aborting invocation with --all and --quality options.\n")
 
 # Build list of source files and create directories if necessary
 extensions = [".mp4", ".m4v", ".mov", ".mkv", ".mpg", ".mpeg", ".avi", ".wmv", ".flv", ".webm", ".ts"]
+print("\nBuilding source list...")
 if args.all:
 	source_files = ["source/" + file for file in os.listdir("source") if os.path.splitext(file)[1].lower() in extensions]
 else:
 	source_files = [args.file]
 for source_file in source_files:
-		session = Session(source_file)
-		if os.path.exists(session.path["output"]):
-			print("Skipping", source_file)
-			source_files = [file for file in source_files if file is not source_file]
-		print(source_files)
-	if len(source_files) == 0:
-		sys.exit("All source files have already been transcoded. Exiting.")
+	session = Session(source_file)
+	if os.path.exists(session.path["output"]):
+		print(" Skipping", source_file)
+		source_files = [file for file in source_files if file is not source_file]
+if len(source_files) == 0:
+	sys.exit("All source files have already been transcoded. Exiting.\n")
+else:
+	print(str(source_files) + "\n")
 if not os.path.exists("performance"):
 	os.mkdir("performance")
 if not os.path.exists("hevc"):
@@ -202,7 +203,6 @@ if not os.path.exists("hevc"):
 
 # Do the thing
 start_time = datetime.now()
-print("\n{date}: Starting transcode session for {source_files}\n".format(date=str(datetime.now()), source_files=str(source_files)))
 for file in source_files:
 	session = Session(file)
 	session.summarize()
