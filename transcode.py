@@ -4,19 +4,88 @@ import argparse
 from datetime import datetime
 import os
 import sys
+
+# Verify script is colocated with ./src/ and import TranscodeSession.py
+if not os.path.isdir(os.path.join(sys.path[0], "src")):
+	sys.exit("FATAL: ./src/ not present in parent diectory.\n")
 sys.path.append(os.path.join(sys.path[0], "src"))
-from TranscodeSession import Session
+try:
+	from TranscodeSession import Session
+except ImportError:
+	sys.exit("FATAL: failed to import TranscodeSession from src/TranscodeSession.py\n")
 
 """
 
 TODO:
 - allow comma-separated string for --preset, e.g. medium,slow,slower, map to list
-- ~~if presets.json does not exist, download from github~~
-- need to format source / output filenames: drop resolution suffixes
 - add check: if working directory == script location, exit with warning to symlink transcode.py onto $PATH, else if different directory but no symlink, prompt to run --install
 - add --install arg (with optional path to custom $PATH location) to create symlink at /usr/local/bin or custom $PATH location?
+- once profiling is complete, only append file decorator if --test is specified
 
 """
+
+def build_source_list(args):
+	"""	Constructs and returns list of source files
+	"""
+	extensions = [".mp4", ".m4v", ".mov", ".mkv", ".mpg", ".mpeg", ".avi", ".wmv", ".flv", ".webm", ".ts"]
+	print("\nBuilding source list...")
+	if args.all:
+		source_files = ["source/" + file for file in os.listdir("source") if os.path.splitext(file)[1].lower() in extensions]
+	else:
+		if os.path.splitext(args.file)[1].lower() in extensions:
+			source_files = [args.file]
+		else:
+			sys.exit("FATAL: " + args.file + " has invalid file extension!\n")
+
+	for source_file in source_files:
+		session = Session(source_file, args)
+		if os.path.exists(session.path["output"]):
+			print(" Skipping", source_file)
+			source_files = [file for file in source_files if file is not source_file]
+
+	if len(source_files) == 0:
+		sys.exit("All supported files in ./source/ have already been transcoded. Exiting.\n")
+	else:
+		print(str(source_files) + "\n")
+
+	return source_files
+
+def validate_args(args):
+	"""	Exits with error messages if command-line arguments are invalid
+	"""
+	valid_arguments = False
+	if not "source" in os.listdir():
+		print("FATAL: invalid working directory!")
+	elif args.file and not os.path.exists(args.file):
+		print("FATAL:", args.file, "not found!")
+	elif args.preset and not args.preset.lower() in ("ultrafast", "superfast", "veryfast", "faster", "fast", "medium", "slow", "slower", "veryslow", "placebo"):
+		print("FATAL:", args.preset, "not valid!")
+	elif args.quality and not args.quality in range(-12, 51):
+		print("FATAL: quality must be between -12 and 51 (lower is slower + higher quality)")
+	else:
+		valid_arguments = True
+
+	if not valid_arguments:
+		sys.exit("Invalid command-line arguments.\n")
+	elif args.all and args.quality:
+		print("Warning! Combining --all and --quality options is not recommended and may not produce optimal HEVC transcodes.")
+		while "need response":
+			reply = str(input("Proceed? (y/n)" )).lower().strip()
+			if reply[0] == "y":
+				break
+			if reply[0] == "n":
+				sys.exit("Aborting invocation with --all and --quality options.\n")
+
+	if not os.path.isdir("performance"):
+		try:
+			os.mkdir("performance")
+		except FileExistsError:
+			sys.exit("FATAL: can't create directory \"performance\" because file with same name exists")
+	if not os.path.isdir("hevc"):
+		try:
+			os.mkdir("hevc")
+		except FileExistsError:
+			sys.exit("FATAL: can't create directory \"hevc\" because file with same name exists")
 
 def main():
 	# Define command-line arguments
@@ -32,70 +101,16 @@ def main():
 	parser.add_argument("--small", action="store_true", help="use additional encoder options to minimize filesize at the expense of speed")
 	parser.add_argument("--delete", action="store_true", help="delete output files when complete/interrupted")
 	args = parser.parse_args()
-	valid_arguments = False
-
-	# Validate command-line arguments
-	if not "source" in os.listdir():
-		print("FATAL: invalid working directory!")
-	elif args.file and not os.path.exists(args.file):
-		print("FATAL:", args.file, "not found!")
-	elif args.preset and not args.preset.lower() in ("ultrafast", "superfast", "veryfast", "faster", "fast", "medium", "slow", "slower", "veryslow", "placebo"):
-		print("FATAL:", args.preset, "not valid!")
-	elif args.quality and not args.quality in range(-12, 51):
-		print("FATAL: quality must be between -12 and 51 (lower is slower + higher quality)")
-	else:
-		valid_arguments = True
-	if not valid_arguments:
-		sys.exit("Invalid command-line arguments.\n")
-	elif args.all and args.quality:
-		print("Warning! Combining --all and --quality options is not recommended and may not produce optimal HEVC transcodes.")
-		while "need response":
-			reply = str(input("Proceed? (y/n)" )).lower().strip()
-			if reply[0] == "y":
-				break
-			if reply[0] == "n":
-				sys.exit("Aborting invocation with --all and --quality options.\n")
-
-	# Build list of source files and create directories if necessary
-	extensions = [".mp4", ".m4v", ".mov", ".mkv", ".mpg", ".mpeg", ".avi", ".wmv", ".flv", ".webm", ".ts"]
-	print("\nBuilding source list...")
-	if args.all:
-		source_files = ["source/" + file for file in os.listdir("source") if os.path.splitext(file)[1].lower() in extensions]
-	else:
-		source_files = [args.file]
-	for source_file in source_files:
-		session = Session(source_file, args)
-		if os.path.exists(session.path["output"]):
-			print(" Skipping", source_file)
-			source_files = [file for file in source_files if file is not source_file]
-	if len(source_files) == 0:
-		sys.exit("All source files have already been transcoded. Exiting.\n")
-	else:
-		print(str(source_files) + "\n")
-	if not os.path.exists("performance"):
-		os.mkdir("performance")
-	if not os.path.exists("hevc"):
-		os.mkdir("hevc")
+	validate_args(args)
 
 	# Do the thing
+	source_files = build_source_list(args)
 	time_script_started = datetime.now()
 	for file in source_files:
 		session = Session(file, args)
-		session.summarize()
-		time_session_started = datetime.now()
 		session.start()
 		session.job.wait()
-		time_session_finished = datetime.now()
-		time_session_duration = time_session_finished - time_session_started
-		fps = session.source["frames"] / time_session_duration.seconds
-		source_file_size = session.source["filesize"] / 1000000
-		output_file_size = os.path.getsize(session.path["output"]) / 1000000
-		compression_ratio = int(100 - (output_file_size / source_file_size * 100))
-		print("\n{date}: Finished {output_file}".format(date=str(time_session_finished), output_file=session.path["output"]))
-		session.log(time_session_duration, fps, compression_ratio)
-		print("\n\n\n\n\n")
-		if args.delete:
-			session.cleanup()
+		session.finish()
 
 	time_script_finished = datetime.now()
 	time_script_duration = time_script_finished - time_script_started

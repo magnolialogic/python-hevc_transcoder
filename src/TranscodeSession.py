@@ -21,9 +21,10 @@ class Session():
 			FHD = "ctu=64:qg-size=64"
 			UHD = "ctu=64:qg-size=64"
 
+	#	Lifecycle methods
+
 	def __init__(self, file, args):
 		signal.signal(signal.SIGINT, self.signal_handler)
-
 		self.args = args
 
 		# Get source file metadata
@@ -43,6 +44,7 @@ class Session():
 			resolution = "FHD"
 		elif 2160 <= height:
 			resolution = "UHD"
+
 		self.source["resolution"] = resolution
 
 		# Create empty attributes for dynamic session options
@@ -53,16 +55,10 @@ class Session():
 
 		# Construct session options and parameters
 		self.map_options()
-		self.file_decorator = "_RF" + str(self.encoder_quality)
-		self.file_decorator += "_{preset}".format(preset=self.encoder_preset.capitalize())
-		if self.args.baseline:
-			self.file_decorator += "_Baseline"
-		elif self.args.best:
-			self.file_decorator += "_Best"
-		if self.args.small:
-			self.file_decorator += "_Small"
-		self.path["output"] = "hevc/" + self.source["filename"] + self.file_decorator + ".mp4"
-		self.path["log"] = "performance/" + self.source["filename"] + self.file_decorator + ".log"
+
+		self.output["filename"] = self.source["filename"] + self.output["file_decorator"]
+		self.path["output"] = "hevc/" + self.output["filename"] + ".mp4"
+		self.path["log"] = "performance/" + self.output["filename"] + ".log"
 
 		# Verify no attributes are None
 		self.validate()
@@ -76,25 +72,10 @@ class Session():
 		if hasattr(self, "job"):
 			self.job.terminate()
 			self.cleanup()
+
 		sys.exit("\n\n{date}: Caught ctrl+c, aborting.\n\n".format(date=datetime.now()))
 
-	def cleanup(self):
-		"""	Always deletes output file, deletes log if --delete is passed from command-line
-		"""
-		if os.path.exists(self.path["output"]):
-			os.remove(self.path["output"])
-		if self.args.delete:
-			if os.path.exists(self.path["log"]):
-				os.remove(self.path["log"])
-
-	def log(self, elapsed_time, fps, compression_ratio):
-		"""	Summarizes transcode session for screen and log
-		"""
-		with open(self.path["log"], "w") as logfile:
-			summary = "{elapsed_time}\n{fps} fps\n{compression_ratio}% reduction".format(elapsed_time=elapsed_time, fps=fps, compression_ratio=compression_ratio)
-			logfile.write(summary + "\n\n" + session.args + "\n\n")
-			pprint(vars(self), logfile)
-			print(summary)
+	#	Object tasks
 
 	def map_options(self):
 		"""	Start with settings based on source resolution and then override defaults based on command-line arguments
@@ -107,29 +88,82 @@ class Session():
 			self.preset_name = "Baseline"
 		else:
 			self.preset_name = "Default"
+
 		if self.args.preset:
 			self.encoder_preset = self.args.preset.lower()
 		else:
 			self.encoder_preset = "slow"
+
 		if self.args.quality:
 			self.encoder_quality = self.args.quality
+
 		if self.args.small:
 			self.encoder_options += ":tu-intra-depth=3:tu-inter-depth=3"
 
-	def start(self):
-		"""	Starts HandBrakeCLI session and creates job attribute
-		"""
-		self.job = subprocess.Popen(shlex.split(self.command, posix=False)) # Posix=False to escape double-quotes in arguments
+		self.output = {"file_decorator": "_RF" + str(self.encoder_quality)}
+		self.output["file_decorator"] += "_{preset}".format(preset=self.encoder_preset.capitalize())
+		if self.args.baseline:
+			self.output["file_decorator"] += "_Baseline"
+		elif self.args.best:
+			self.output["file_decorator"] += "_Best"
 
-	def summarize(self):
-		"""	Summarize transcode session before starting
-		"""
-		print("{date}: Starting transcode session for {source}:".format(date=str(datetime.now()), source=self.path["source"]))
-		pprint(vars(self))
-		print()
+		if self.args.small:
+			self.output["file_decorator"] += "_Small"
 
 	def validate(self):
 		"""	Verifies that no session attributes are null
 		"""
 		if any(value is None for attribute, value in self.__dict__.items()):
 			sys.exit("FATAL: Session.validate(): found null attribute for " + self.path["source"])
+
+	def start(self):
+		"""	Starts HandBrakeCLI session and creates job attribute
+		"""
+		print("{date}: Starting transcode session for {source}:".format(date=str(datetime.now()), source=self.path["source"]))
+		pprint(vars(self), indent=4)
+		print("\n{command}\n".format(command=self.command))
+		self.time = {"started": datetime.now()}
+		self.job = subprocess.Popen(shlex.split(self.command, posix=False)) # Posix=False to escape double-quotes in arguments
+
+	def finish(self):
+		"""	Compute attributes needed to generate summary and performance log
+		"""
+		self.time["finished"] = datetime.now()
+		print("\n{date}: Finished {output_file}".format(date=str(self.time["finished"]), output_file=self.path["output"]))
+		self.time["duration"] = self.time["finished"] - self.time["started"]
+		self.output["filesize"] = os.path.getsize(self.path["output"])
+		self.output["compression_ratio"] = int(100 - (self.output["filesize"] / self.source["filesize"] * 100))
+		self.fps = self.source["frames"] / self.time["duration"].seconds
+		self.log(self.time["duration"], self.fps, self.output["compression_ratio"])
+		print("\n\n\n\n\n")
+		if self.args.delete:
+			self.cleanup()
+
+	def log(self, elapsed_time, fps, compression_ratio):
+		"""	Summarizes transcode session for screen and log
+		"""
+		summary = "{duration}\n{fps} fps\n{compression_ratio}% reduction ({source_size}mb to {output_size}mb)".format(duration=self.time["duration"], fps=self.fps, compression_ratio=self.output["compression_ratio"], source_size=int(self.source["filesize"] / 100000), output_size=int(self.output["filesize"] / 100000))
+		with open(self.path["log"], "w") as logfile:
+			logfile.write(summary + "\n\n" + self.command + "\n\n")
+			pprint(vars(self), logfile)
+
+		print(summary)
+
+	def cleanup(self):
+		"""	Always deletes output file, deletes log if --delete is passed from command-line
+		"""
+		if os.path.exists(self.path["output"]):
+			try:
+				os.remove(self.path["output"])
+			except FileNotFoundError:
+				print("Session.cleanup():", self.path["output"], "does not exist.")
+
+		if self.args.delete:
+			if os.path.exists(self.path["log"]):
+				try:
+					os.remove(self.path["log"])
+				except FileNotFoundError:
+					print("Session.cleanup():", self.path["log"], "does not exist.")
+
+if __name__ == "__main__":
+	sys.exit("I am a module, not a script.")
