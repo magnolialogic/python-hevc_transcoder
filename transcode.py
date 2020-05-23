@@ -4,7 +4,7 @@ import argparse
 from datetime import datetime
 import os
 import sys
-from TranscodeSession import Session
+from src import TranscodeSession
 
 """
 
@@ -61,7 +61,7 @@ def main():
 	else:
 		source_files = [args.file]
 	for source_file in source_files:
-		session = Session(source_file, args)
+		session = TranscodeSession.Session(source_file, args)
 		if os.path.exists(session.path["output"]):
 			print(" Skipping", source_file)
 			source_files = [file for file in source_files if file is not source_file]
@@ -77,7 +77,7 @@ def main():
 	# Do the thing
 	task_start_time = datetime.now()
 	for file in source_files:
-		session = Session(file, args)
+		session = TranscodeSession.Session(file, args)
 		session.summarize()
 		print(session.command + "\n")
 		job_start_time = datetime.now()
