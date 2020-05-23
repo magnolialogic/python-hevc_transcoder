@@ -4,7 +4,8 @@ import argparse
 from datetime import datetime
 import os
 import sys
-from src import TranscodeSession
+sys.path.append(os.path.join(sys.path[0], "src"))
+from TranscodeSession import Session
 
 """
 
@@ -12,6 +13,8 @@ TODO:
 - allow comma-separated string for --preset, e.g. medium,slow,slower, map to list
 - ~~if presets.json does not exist, download from github~~
 - need to format source / output filenames: drop resolution suffixes
+- add check: if working directory == script location, exit with warning to symlink transcode.py onto $PATH
+- add --install arg to create symlink at /usr/local/bin?
 
 """
 
@@ -32,7 +35,7 @@ def main():
 	valid_arguments = False
 
 	# Validate command-line arguments
-	if not set(["source", "presets.json"]).issubset(set(os.listdir())):
+	if not "source" in os.listdir():
 		print("FATAL: invalid working directory!")
 	elif args.file and not os.path.exists(args.file):
 		print("FATAL:", args.file, "not found!")
@@ -47,7 +50,7 @@ def main():
 	elif args.all and args.quality:
 		print("Warning! Combining --all and --quality options is not recommended and may not produce optimal HEVC transcodes.")
 		while "need response":
-			reply = str(input("Proceed? (y/n) cccccccccc" )).lower().strip()
+			reply = str(input("Proceed? (y/n)" )).lower().strip()
 			if reply[0] == "y":
 				break
 			if reply[0] == "n":
@@ -61,7 +64,7 @@ def main():
 	else:
 		source_files = [args.file]
 	for source_file in source_files:
-		session = TranscodeSession.Session(source_file, args)
+		session = Session(source_file, args)
 		if os.path.exists(session.path["output"]):
 			print(" Skipping", source_file)
 			source_files = [file for file in source_files if file is not source_file]
@@ -77,7 +80,7 @@ def main():
 	# Do the thing
 	task_start_time = datetime.now()
 	for file in source_files:
-		session = TranscodeSession.Session(file, args)
+		session = Session(file, args)
 		session.summarize()
 		print(session.command + "\n")
 		job_start_time = datetime.now()
