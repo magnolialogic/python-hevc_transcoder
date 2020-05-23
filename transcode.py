@@ -13,8 +13,8 @@ TODO:
 - allow comma-separated string for --preset, e.g. medium,slow,slower, map to list
 - ~~if presets.json does not exist, download from github~~
 - need to format source / output filenames: drop resolution suffixes
-- add check: if working directory == script location, exit with warning to symlink transcode.py onto $PATH
-- add --install arg to create symlink at /usr/local/bin?
+- add check: if working directory == script location, exit with warning to symlink transcode.py onto $PATH, else if different directory but no symlink, prompt to run --install
+- add --install arg (with optional path to custom $PATH location) to create symlink at /usr/local/bin or custom $PATH location?
 
 """
 
@@ -78,30 +78,29 @@ def main():
 		os.mkdir("hevc")
 
 	# Do the thing
-	task_start_time = datetime.now()
+	time_script_started = datetime.now()
 	for file in source_files:
 		session = Session(file, args)
 		session.summarize()
-		print(session.command + "\n")
-		job_start_time = datetime.now()
+		time_session_started = datetime.now()
 		session.start()
 		session.job.wait()
-		job_end_time = datetime.now()
-		job_elapsed_time = job_end_time - job_start_time
-		fps = session.source["frames"] / job_elapsed_time.seconds
+		time_session_finished = datetime.now()
+		time_session_duration = time_session_finished - time_session_started
+		fps = session.source["frames"] / time_session_duration.seconds
 		source_file_size = session.source["filesize"] / 1000000
 		output_file_size = os.path.getsize(session.path["output"]) / 1000000
 		compression_ratio = int(100 - (output_file_size / source_file_size * 100))
-		print("\n{date}: Finished {output_file}".format(date=str(job_end_time), output_file=session.path["output"]))
-		session.log(job_elapsed_time, fps, compression_ratio)
+		print("\n{date}: Finished {output_file}".format(date=str(time_session_finished), output_file=session.path["output"]))
+		session.log(time_session_duration, fps, compression_ratio)
 		print("\n\n\n\n\n")
 		if args.delete:
 			session.cleanup()
 
-	task_end_time = datetime.now()
-	task_elapsed_time = task_end_time - task_start_time
+	time_script_finished = datetime.now()
+	time_script_duration = time_script_finished - time_script_started
 
-	sys.exit("{date}: Finished after {task_elapsed_time}.\n".format(date=str(datetime.now()), task_elapsed_time=task_elapsed_time))
+	sys.exit("{date}: Finished after {duration}.\n".format(date=str(datetime.now()), duration=time_script_duration))
 
 # Check for Python 3.8 (required for shlex usage)
 if not (sys.version_info[0] >= 3 and sys.version_info[1] >= 8):
