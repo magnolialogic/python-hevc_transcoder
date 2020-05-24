@@ -8,6 +8,9 @@ import subprocess
 import sys
 
 class Session():
+
+	#	Default encoder settings
+
 	class Settings:
 		class RF:
 			SD = 21
@@ -21,7 +24,7 @@ class Session():
 			FHD = "ctu=64:qg-size=64"
 			UHD = "ctu=64:qg-size=64"
 
-	#	Lifecycle methods
+	#	Object lifecycle methods
 
 	def __init__(self, file, args):
 		signal.signal(signal.SIGINT, self.signal_handler)
@@ -75,7 +78,7 @@ class Session():
 
 		sys.exit("\n\n{date}: Caught ctrl+c, aborting.\n\n".format(date=datetime.now()))
 
-	#	Object tasks
+	#	Object task methods
 
 	def map_options(self):
 		"""	Start with settings based on source resolution and then override defaults based on command-line arguments
@@ -142,7 +145,7 @@ class Session():
 	def log(self, elapsed_time, fps, compression_ratio):
 		"""	Summarizes transcode session for screen and log
 		"""
-		summary = "{duration}\n{fps} fps\n{compression_ratio}% reduction ({source_size}mb to {output_size}mb)".format(duration=self.time["duration"], fps=self.fps, compression_ratio=self.output["compression_ratio"], source_size=int(self.source["filesize"] / 100000), output_size=int(self.output["filesize"] / 100000))
+		summary = "{duration}\n{fps:.2f} fps\n{compression_ratio}% reduction ({source_size}mb to {output_size}mb)".format(duration=self.time["duration"], fps=self.fps, compression_ratio=self.output["compression_ratio"], source_size=int(self.source["filesize"] / 1000000), output_size=int(self.output["filesize"] / 1000000))
 		with open(self.path["log"], "w") as logfile:
 			logfile.write(summary + "\n\n" + self.command + "\n\n")
 			pprint(vars(self), logfile)
