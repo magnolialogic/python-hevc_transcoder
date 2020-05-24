@@ -168,5 +168,8 @@ class Session():
 				except FileNotFoundError:
 					print("Session.cleanup():", self.path["log"], "does not exist.")
 
-if __name__ == "__main__":
+# Check for Python 3.8 (required for shlex usage)
+if not (sys.version_info[0] >= 3 and sys.version_info[1] >= 8):
+	sys.exit("\nFATAL: Requires Python3.8 or newer.\n")
+elif __name__ == "__main__":
 	sys.exit("I am a module, not a script.")
