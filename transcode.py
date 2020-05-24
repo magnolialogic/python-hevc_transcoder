@@ -14,7 +14,7 @@ try:
 except ImportError:
 	sys.exit("FATAL: failed to import TranscodeSession from src/TranscodeSession.py\n")
 
-def validate_args():
+def evaluate_args():
 	"""	Exits with error messages if command-line arguments are invalid
 	"""
 	parser = argparse.ArgumentParser(description="Transcodes given file(s) to HEVC format.")
@@ -78,7 +78,7 @@ def validate_args():
 	return args
 
 def get_user_response():
-	"""	Accepts yes/no answer as user input and returns as boolean
+	"""	Accepts yes/no answer as user input and returns answer as boolean
 	"""
 	while "need response":
 		reply = str(input(" Proceed? (y/n) ")).lower().strip()
@@ -95,6 +95,47 @@ def get_user_response():
 def symlink(install):
 	"""	Installs / uninstalls a symlink to transcode.py in /usr/local/bin or alternate $PATH location
 	"""
+	def link():
+		print("\nCreate symlink for {script_name} on $PATH?".format(script_name=script_name))
+		proceed = get_user_response()
+		if proceed:
+			if not oct(os.stat(script_realpath).st_mode)[-3:] == 755:
+				os.chmod(script_realpath, 0o755)
+			print("Use default location? /usr/local/bin")
+			default_location = get_user_response()
+			if default_location:
+				os.symlink(script_realpath, os.path.join("/usr/local/bin", script_name))
+				sys.exit("Created symlink to {script_name} in /usr/local/bin\n")
+			else:
+				print("Use alternate $PATH location?")
+				alternate_location = get_user_response()
+				if alternate_location:
+					alternate_path = str(input("Alternate $PATH location: (case-sensitive) "))
+					if alternate_path[0] == "~": alternate_path = os.path.expanduser(alternate_path)
+					if alternate_path in os.get_exec_path():
+						os.symlink(script_realpath, os.path.join(alternate_path, script_name))
+						sys.exit("Created symlink to {script_name} in {alternate_path}\n".format(script_name=script_name, alternate_path=alternate_path))
+					else:
+						sys.exit("\nError: {alternate_path} not found on $PATH, aborting install.\n".format(alternate_path=alternate_path))
+				else:
+					sys.exit("Aborting install.\n")
+		else:
+			sys.exit("Aborting install.\n")
+
+	def unlink():
+		print("\nFound {script_name} on $PATH in {path_dir}\n".format(script_name=script_name, path_dir=path_dir))
+		if os.path.islink(script_path_location):
+			print("Remove symlink to {script_name} in {path_dir}?".format(script_name=script_name, path_dir=path_dir))
+			proceed = get_user_response()
+			if proceed:
+				os.unlink(script_path_location)
+				print("Unlinked {script_path_location}\n".format(script_path_location=script_path_location))
+			else:
+				sys.exit("Aborting uninstall.\n")
+		else:
+			sys.exit("Error: {script_path_location} exists on $PATH but is not a symlink, skipping uninstall.\n".format(script_path_location=script_path_location))
+		sys.exit()
+
 	script_name=os.path.basename(sys.argv[0])
 	script_realpath = os.path.realpath(__file__)
 	script_on_path = False
@@ -112,47 +153,12 @@ def symlink(install):
 		if script_on_path:
 			sys.exit("\n{script_name} already on $PATH at {script_path_location}, skipping install.\n".format(script_name=script_name, script_path_location=script_path_location))
 		else:
-			print("\nCreate symlink for {script_name} on $PATH?".format(script_name=script_name))
-			proceed = get_user_response()
-			if proceed:
-				if not oct(os.stat(script_realpath).st_mode)[-3:] == 755:
-					os.chmod(script_realpath, 0o755)
-				print("Use default location? /usr/local/bin")
-				default_location = get_user_response()
-				if default_location:
-					os.symlink(script_realpath, os.path.join("/usr/local/bin", script_name))
-					sys.exit("Created symlink to {script_name} in /usr/local/bin\n")
-				else:
-					print("Use alternate $PATH location?")
-					alternate_location = get_user_response()
-					if alternate_location:
-						alternate_path = str(input("Alternate $PATH location: (case-sensitive) "))
-						if alternate_path[0] == "~": alternate_path = os.path.expanduser(alternate_path)
-						if alternate_path in os.get_exec_path():
-							os.symlink(script_realpath, os.path.join(alternate_path, script_name))
-							sys.exit("Created symlink to {script_name} in {alternate_path}\n".format(script_name=script_name, alternate_path=alternate_path))
-						else:
-							sys.exit("\nError: {alternate_path} not found on $PATH, aborting install.\n".format(alternate_path=alternate_path))
-					else:
-						sys.exit("Aborting install.\n")
-			else:
-				sys.exit("Aborting install.\n")
+			link()
 	else:
 		if not script_on_path:
 			sys.exit("\n{script_name} not on $PATH, skipping uninstall.\n".format(script_name=script_name))
 		else:
-			print("\nFound {script_name} on $PATH in {path_dir}\n".format(script_name=script_name, path_dir=path_dir))
-			if os.path.islink(script_path_location):
-				print("Remove symlink to {script_name} in {path_dir}?".format(script_name=script_name, path_dir=path_dir))
-				proceed = get_user_response()
-				if proceed:
-					os.unlink(script_path_location)
-					print("Unlinked {script_path_location}\n".format(script_path_location=script_path_location))
-				else:
-					sys.exit("Aborting uninstall.\n")
-			else:
-				sys.exit("Error: {script_path_location} exists on $PATH but is not a symlink, skipping uninstall.\n".format(script_path_location=script_path_location))
-			sys.exit()
+			unlink()
 
 def build_source_list(args):
 	"""	Constructs and returns list of source files
@@ -186,7 +192,7 @@ def build_source_list(args):
 	return source_files
 
 def main():
-	args = validate_args()
+	args = evaluate_args()
 	source_files = build_source_list(args)
 	time_script_started = datetime.now()
 	for file in source_files:
@@ -200,8 +206,5 @@ def main():
 
 	sys.exit("{date}: Finished after {duration}.\n".format(date=str(datetime.now()), duration=time_script_duration))
 
-# Check for Python 3.8 (required for shlex usage)
-if not (sys.version_info[0] >= 3 and sys.version_info[1] >= 8):
-	sys.exit("FATAL: Requires Python3.8 or newer.\n")
-elif __name__ == "__main__":
+if __name__ == "__main__":
 	main()
