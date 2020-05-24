@@ -14,21 +14,153 @@ try:
 except ImportError:
 	sys.exit("FATAL: failed to import TranscodeSession from src/TranscodeSession.py\n")
 
-"""
+def validate_args():
+	"""	Exits with error messages if command-line arguments are invalid
+	"""
+	parser = argparse.ArgumentParser(description="Transcodes given file(s) to HEVC format.")
+	install_group = parser.add_mutually_exclusive_group()
+	install_group.add_argument("--install", action="store_true", help="install symlink to transcode.py on $PATH")
+	install_group.add_argument("--uninstall", action="store_true", help="remove symlink to transcode.py")
+	files_group = parser.add_mutually_exclusive_group()
+	files_group.add_argument("--file", help="relative path to movie in source directory")
+	files_group.add_argument("--all", action="store_true", help="transcode all supported movies in source directory")
+	parser.add_argument("--quality", type=int, help="HandBrake quality slider value (-12,51)")
+	parser.add_argument("--preset", help="override video encoder preset")
+	preset_group = parser.add_mutually_exclusive_group()
+	preset_group.add_argument("--baseline", action="store_true", help="use baseline encoder options")
+	preset_group.add_argument("--best", action="store_true", help="use highest quality encoder options")
+	parser.add_argument("--small", action="store_true", help="use additional encoder options to minimize filesize at the expense of speed")
+	parser.add_argument("--delete", action="store_true", help="delete output files when complete/interrupted")
+	args = parser.parse_args()
 
-TODO:
-- allow comma-separated string for --preset, e.g. medium,slow,slower, map to list
-- add check: if working directory == script location, exit with warning to symlink transcode.py onto $PATH, else if different directory but no symlink, prompt to run --install
-- add --install arg (with optional path to custom $PATH location) to create symlink at /usr/local/bin or custom $PATH location?
-- once profiling is complete, only append file decorator if --test is specified
+	valid_arguments = False
 
-"""
+	if args.install or args.uninstall:
+		if len(sys.argv) > 2:
+			print("\nFATAL: --install/--uninstall may not be called with any other arguments")
+		else:
+			if args.install:
+				symlink(True)
+			else:
+				symlink(False)
+	elif os.path.dirname(os.path.realpath(__file__)) == os.getcwd():
+		print("\nFATAL: invalid working directory: running from master directory. Please create working directory in another location.")
+	elif not "source" in os.listdir():
+		print("\nFATAL: invalid working directory: ./source/ does not exist")
+	elif args.file and not os.path.exists(args.file):
+		print("\nFATAL:", args.file, "not found!")
+	elif args.preset and not args.preset.lower() in ("ultrafast", "superfast", "veryfast", "faster", "fast", "medium", "slow", "slower", "veryslow", "placebo"):
+		print("\nFATAL:", args.preset, "not valid!")
+	elif args.quality and not args.quality in range(-12, 51):
+		print("\nATAL: quality must be between -12 and 51 (lower is slower + higher quality)")
+	else:
+		valid_arguments = True
+
+	if not valid_arguments:
+		sys.exit("Invalid command-line arguments.\n")
+	elif args.all and args.quality:
+		print("\nWarning! Combining --all and --quality options is not recommended and may not produce optimal HEVC transcodes.")
+		proceed = get_user_response()
+		if not proceed:
+			sys.exit("Aborting invocation with --all and --quality options.\n")
+
+	if not os.path.isdir("performance"):
+		try:
+			os.mkdir("performance")
+		except FileExistsError:
+			sys.exit("\nFATAL: can't create directory \"performance\" because file with same name exists")
+	if not os.path.isdir("hevc"):
+		try:
+			os.mkdir("hevc")
+		except FileExistsError:
+			sys.exit("\nFATAL: can't create directory \"hevc\" because file with same name exists")
+
+	return args
+
+def get_user_response():
+	"""	Accepts yes/no answer as user input and returns as boolean
+	"""
+	while "need response":
+		reply = str(input(" Proceed? (y/n) ")).lower().strip()
+		if len(reply) > 0:
+			if reply[0] == "y":
+				response = True
+				break
+			if reply[0] == "n":
+				response = False
+				break
+
+	return response
+
+def symlink(install):
+	"""	Installs / uninstalls a symlink to transcode.py in /usr/local/bin or alternate $PATH location
+	"""
+	script_name=os.path.basename(sys.argv[0])
+	script_realpath = os.path.realpath(__file__)
+	script_on_path = False
+	for location in os.get_exec_path():
+		if script_name in os.listdir(location):
+			script_on_path = True
+			script_path_location = os.path.join(location, script_name)
+			break
+
+	if script_on_path:
+		path_dir = os.path.dirname(script_path_location)
+		script_executable = os.access(script_realpath, os.X_OK)
+
+	if install:
+		if script_on_path:
+			sys.exit("\n{script_name} already on $PATH at {script_path_location}, skipping install.\n".format(script_name=script_name, script_path_location=script_path_location))
+		else:
+			print("\nCreate symlink for {script_name} on $PATH?".format(script_name=script_name))
+			proceed = get_user_response()
+			if proceed:
+				if not oct(os.stat(script_realpath).st_mode)[-3:] == 755:
+					os.chmod(script_realpath, 0o755)
+				print("Use default location? /usr/local/bin")
+				default_location = get_user_response()
+				if default_location:
+					os.symlink(script_realpath, os.path.join("/usr/local/bin", script_name))
+					sys.exit("Created symlink to {script_name} in /usr/local/bin\n")
+				else:
+					print("Use alternate $PATH location?")
+					alternate_location = get_user_response()
+					if alternate_location:
+						alternate_path = str(input("Alternate $PATH location: (case-sensitive) "))
+						if alternate_path[0] == "~": alternate_path = os.path.expanduser(alternate_path)
+						if alternate_path in os.get_exec_path():
+							os.symlink(script_realpath, os.path.join(alternate_path, script_name))
+							sys.exit("Created symlink to {script_name} in {alternate_path}\n".format(script_name=script_name, alternate_path=alternate_path))
+						else:
+							sys.exit("\nError: {alternate_path} not found on $PATH, aborting install.\n".format(alternate_path=alternate_path))
+					else:
+						sys.exit("Aborting install.\n")
+			else:
+				sys.exit("Aborting install.\n")
+	else:
+		if not script_on_path:
+			sys.exit("\n{script_name} not on $PATH, skipping uninstall.\n".format(script_name=script_name))
+		else:
+			print("\nFound {script_name} on $PATH in {path_dir}\n".format(script_name=script_name, path_dir=path_dir))
+			if os.path.islink(script_path_location):
+				print("Remove symlink to {script_name} in {path_dir}?".format(script_name=script_name, path_dir=path_dir))
+				proceed = get_user_response()
+				if proceed:
+					os.unlink(script_path_location)
+					print("Unlinked {script_path_location}\n".format(script_path_location=script_path_location))
+				else:
+					sys.exit("Aborting uninstall.\n")
+			else:
+				sys.exit("Error: {script_path_location} exists on $PATH but is not a symlink, skipping uninstall.\n".format(script_path_location=script_path_location))
+			sys.exit()
 
 def build_source_list(args):
 	"""	Constructs and returns list of source files
 	"""
 	extensions = [".mp4", ".m4v", ".mov", ".mkv", ".mpg", ".mpeg", ".avi", ".wmv", ".flv", ".webm", ".ts"]
+
 	print("\nBuilding source list...")
+
 	if args.all:
 		source_files = ["source/" + file for file in os.listdir("source") if os.path.splitext(file)[1].lower() in extensions]
 	else:
@@ -44,66 +176,17 @@ def build_source_list(args):
 			source_files = [file for file in source_files if file is not source_file]
 
 	if len(source_files) == 0:
-		sys.exit("All supported files in ./source/ have already been transcoded. Exiting.\n")
+		if args.all:
+			sys.exit("All supported files in ./source/ have already been transcoded. Exiting.\n")
+		else:
+			sys.exit("File exists. Exiting.")
 	else:
 		print(str(source_files) + "\n")
 
 	return source_files
 
-def validate_args(args):
-	"""	Exits with error messages if command-line arguments are invalid
-	"""
-	valid_arguments = False
-	if not "source" in os.listdir():
-		print("FATAL: invalid working directory!")
-	elif args.file and not os.path.exists(args.file):
-		print("FATAL:", args.file, "not found!")
-	elif args.preset and not args.preset.lower() in ("ultrafast", "superfast", "veryfast", "faster", "fast", "medium", "slow", "slower", "veryslow", "placebo"):
-		print("FATAL:", args.preset, "not valid!")
-	elif args.quality and not args.quality in range(-12, 51):
-		print("FATAL: quality must be between -12 and 51 (lower is slower + higher quality)")
-	else:
-		valid_arguments = True
-
-	if not valid_arguments:
-		sys.exit("Invalid command-line arguments.\n")
-	elif args.all and args.quality:
-		print("Warning! Combining --all and --quality options is not recommended and may not produce optimal HEVC transcodes.")
-		while "need response":
-			reply = str(input("Proceed? (y/n)" )).lower().strip()
-			if reply[0] == "y":
-				break
-			if reply[0] == "n":
-				sys.exit("Aborting invocation with --all and --quality options.\n")
-
-	if not os.path.isdir("performance"):
-		try:
-			os.mkdir("performance")
-		except FileExistsError:
-			sys.exit("FATAL: can't create directory \"performance\" because file with same name exists")
-	if not os.path.isdir("hevc"):
-		try:
-			os.mkdir("hevc")
-		except FileExistsError:
-			sys.exit("FATAL: can't create directory \"hevc\" because file with same name exists")
-
 def main():
-	# Define command-line arguments
-	parser = argparse.ArgumentParser()
-	files_group = parser.add_mutually_exclusive_group(required=True)
-	files_group.add_argument("-f", "--file", help="relative path to movie in source directory")
-	files_group.add_argument("--all", action="store_true", help="transcode all supported movies in source directory")
-	parser.add_argument("-q", "--quality", type=int, help="HandBrake quality slider value (-12,51)")
-	parser.add_argument("--preset", help="override video encoder preset")
-	preset_group = parser.add_mutually_exclusive_group(required=False)
-	preset_group.add_argument("--baseline", action="store_true", help="use baseline encoder options")
-	preset_group.add_argument("--best", action="store_true", help="use highest quality encoder options")
-	parser.add_argument("--small", action="store_true", help="use additional encoder options to minimize filesize at the expense of speed")
-	parser.add_argument("--delete", action="store_true", help="delete output files when complete/interrupted")
-	args = parser.parse_args()
-	validate_args(args)
-
-	# Do the thing
+	args = validate_args()
 	source_files = build_source_list(args)
 	time_script_started = datetime.now()
 	for file in source_files:
