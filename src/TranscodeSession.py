@@ -153,20 +153,13 @@ class Session():
 		print(summary)
 
 	def cleanup(self):
-		"""	Always deletes output file, deletes log if --delete is passed from command-line
+		"""	Deletes output file if it exists
 		"""
 		if os.path.exists(self.path["output"]):
 			try:
 				os.remove(self.path["output"])
 			except FileNotFoundError:
 				print("Session.cleanup():", self.path["output"], "does not exist.")
-
-		if self.args.delete:
-			if os.path.exists(self.path["log"]):
-				try:
-					os.remove(self.path["log"])
-				except FileNotFoundError:
-					print("Session.cleanup():", self.path["log"], "does not exist.")
 
 # Check for Python 3.8 (required for shlex usage)
 if not (sys.version_info[0] >= 3 and sys.version_info[1] >= 8):
