@@ -8,10 +8,10 @@ Tools to transcode video files into HEVC, experiment with different encoder pres
 python script to transcode movies to HEVC using custom encoder options based on source file's resolution. This has only been tested with H.264 MP4 files, but should work with source files with any of the following extensions: ".mp4", ".m4v", ".mov", ".mkv", ".mpg", ".mpeg", ".avi", ".wmv", ".flv", ".webm", ".ts" but YMMV.
 
 ```
-usage: transcode.py [-h] [--install | --uninstall] [--file FILE | --all] [--quality QUALITY] [--preset PRESET] [--baseline | --best]
-                    [--small] [--delete]
+usage: transcode.py [-h] [--install | --uninstall] [--file FILE | --all] [--quality QUALITY] [--preset PRESET]
+                    [--baseline | --best] [--small] [--delete]
 
-Transcodes given file(s) to HEVC format.
+Transcodes given file(s) in ./source/ to HEVC format.
 
 optional arguments:
   -h, --help         show this help message and exit
@@ -70,10 +70,3 @@ compareEncoding.py
     ├── test-RF18.mp4
     └── test-RF24.mp4
 ```
-
-<br>
-<br>
-
-### Assumptions:
-Assumes that H.264 and HEVC encodes have the same base filename and live in "source" and "hevc" directories relative to compareEncoding.py and transcode.py:<br>
-<img src="https://i.imgur.com/1hZwNnV.png" width="200"/>

@@ -17,7 +17,7 @@ except ImportError:
 def evaluate_args():
 	"""	Exits with error messages if command-line arguments are invalid
 	"""
-	parser = argparse.ArgumentParser(description="Transcodes given file(s) to HEVC format.")
+	parser = argparse.ArgumentParser(description="Transcodes given file(s) in .{sep}source{sep} to HEVC format.".format(sep=os.sep))
 	install_group = parser.add_mutually_exclusive_group()
 	install_group.add_argument("--install", action="store_true", help="install symlink to transcode.py on $PATH")
 	install_group.add_argument("--uninstall", action="store_true", help="remove symlink to transcode.py")
