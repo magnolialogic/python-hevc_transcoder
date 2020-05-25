@@ -74,6 +74,12 @@ optional arguments:
 <br>
 <br>
 
+### Installation:
+`python3 /path/to/setup.py --install`
+
+<br>
+<br>
+
 ### Tips:
 You can also compare multiple encodes created with different presets by appending preset names to the HEVC filename.
 e.g.
