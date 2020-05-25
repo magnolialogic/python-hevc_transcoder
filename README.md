@@ -1,6 +1,6 @@
 # python-hevc_encoder
 
-Tools to transcode video files into HEVC, experiment with different encoder presets and options, and pixel-peep/compare the source file to your HEVC output.
+Tools to transcode video files into HEVC, experiment with different encoder presets and options, and pixel-peep/compare the source file to your HEVC output. Default presets were created using source content with fast-moving subjects / high framerate (motorsport).
 <br>
 <br>
 
