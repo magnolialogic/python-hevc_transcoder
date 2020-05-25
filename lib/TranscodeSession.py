@@ -60,7 +60,7 @@ class Session():
 		self.validate()
 
 		# Build HandBrakeCLI command
-		self.command = "HandBrakeCLI --encoder-preset {encoder_preset} --preset-import-file {json_path} --preset {preset_name} --quality {quality} --encopts {encopts} --input {source_path} --output {output_path}".format(encoder_preset=self.encoder_preset, json_path=os.path.join(sys.path[0], "src", "presets.json"), preset_name=self.preset_name, quality=str(self.encoder_quality), encopts=self.encoder_options, source_path=self.path["source"], output_path=self.path["output"])
+		self.command = "HandBrakeCLI --encoder-preset {encoder_preset} --preset-import-file {json_path} --preset {preset_name} --quality {quality} --encopts {encopts} --input {source_path} --output {output_path}".format(encoder_preset=self.encoder_preset, json_path=os.path.join(sys.path[0], "lib", "presets.json"), preset_name=self.preset_name, quality=str(self.encoder_quality), encopts=self.encoder_options, source_path=self.path["source"], output_path=self.path["output"])
 
 	def signal_handler(self, sig, frame):
 		"""	Delete output file if ctrl+c is caught, since file will be corrupt

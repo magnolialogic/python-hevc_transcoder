@@ -5,14 +5,14 @@ from datetime import datetime
 import os
 import sys
 
-# Verify script is colocated with ./src/ and import TranscodeSession.py
-if not os.path.isdir(os.path.join(sys.path[0], "src")):
-	sys.exit("FATAL: ./src/ not present in parent diectory.\n")
-sys.path.append(os.path.join(sys.path[0], "src"))
+# Verify script is colocated with ./lib/ and import TranscodeSession.py
+if not os.path.isdir(os.path.join(sys.path[0], "lib")):
+	sys.exit("FATAL: ./lib/ not present in parent diectory.\n")
+sys.path.append(os.path.join(sys.path[0], "lib"))
 try:
 	from TranscodeSession import Session
 except ImportError:
-	sys.exit("FATAL: failed to import TranscodeSession from src/TranscodeSession.py\n")
+	sys.exit("FATAL: failed to import TranscodeSession from lib/TranscodeSession.py\n")
 
 def evaluate_args():
 	"""	Exits with error messages if command-line arguments are invalid
