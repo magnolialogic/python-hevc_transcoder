@@ -64,16 +64,9 @@ def evaluate_args():
 		if not proceed:
 			sys.exit("Aborting invocation with --all and --quality options.\n")
 
-	if not os.path.isdir("performance"):
-		try:
-			os.mkdir("performance")
-		except FileExistsError:
-			sys.exit("\nFATAL: can't create directory \"performance\" because file with same name exists")
-	if not os.path.isdir("hevc"):
-		try:
-			os.mkdir("hevc")
-		except FileExistsError:
-			sys.exit("\nFATAL: can't create directory \"hevc\" because file with same name exists")
+	for directory in ["performance", "hevc"]:
+		if not os.path.isdir(directory):
+			os.mkdir(directory)
 
 	return args
 

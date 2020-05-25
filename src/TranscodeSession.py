@@ -9,21 +9,6 @@ import sys
 
 class Session():
 
-	#	Default encoder settings
-
-	class Settings:
-		class RF:
-			SD = 21
-			HD = 22
-			FHD = 23
-			UHD = 26
-
-		class ENCOPTS:
-			SD = "ctu=32:qg-size=16"
-			HD = "ctu=32:qg-size=32"
-			FHD = "ctu=64:qg-size=64"
-			UHD = "ctu=64:qg-size=64"
-
 	#	Object lifecycle methods
 
 	def __init__(self, file, args):
@@ -37,28 +22,36 @@ class Session():
 
 		# Populate metadata-based attributes
 		self.path = {"source": os.path.relpath(file)}
-		self.source = {"height": int(metadata["height"]), "width": int(metadata["width"]), "duration": float(metadata["duration"]), "filename": os.path.splitext(os.path.relpath(self.path["source"], "source"))[0], "filesize": os.path.getsize(self.path["source"]), "bitrate": int(metadata["bit_rate"]), "frames": int(metadata["nb_frames"]), "codec": metadata["codec_name"]}
-		height = self.source["height"]
-		if height < 720:
-			resolution = "SD"
-		elif 720 <= height < 1080:
-			resolution = "HD"
-		elif 1080 <= height < 2160:
-			resolution = "FHD"
-		elif 2160 <= height:
-			resolution = "UHD"
-
-		self.source["resolution"] = resolution
+		self.source = {
+				"height": int(metadata["height"]),
+				"width": int(metadata["width"]),
+				"duration": float(metadata["duration"]),
+				"filename": os.path.splitext(os.path.relpath(self.path["source"], "source"))[0],
+				"filesize": os.path.getsize(self.path["source"]),
+				"bitrate": int(metadata["bit_rate"]),
+				"frames": int(metadata["nb_frames"]),
+				"codec": metadata["codec_name"]
+			}
+		if self.source["height"] < 720:
+			self.encoder_quality = 21
+			self.encoder_options = "ctu=32:qg-size=16"
+		elif 720 <= self.source["height"] < 1080:
+			self.encoder_quality = 22
+			self.encoder_options = "ctu=32:qg-size=32"
+		elif 1080 <= self.source["height"] < 2160:
+			self.encoder_quality = 23
+			self.encoder_options = "ctu=64:qg-size=64"
+		elif 2160 <= self.source["height"]:
+			self.encoder_quality = 26
+			self.encoder_options = "ctu=64:qg-size=64"
 
 		# Create empty attributes for dynamic session options
-		self.encoder_quality = None
-		self.encoder_preset = None
 		self.preset_name = None
-		self.encoder_options = None
 
-		# Construct session options and parameters
-		self.map_options()
+		# Construct session options and parameters based on command-line arguments
+		self.options_for_args()
 
+		# Construct output parameters
 		self.output["filename"] = self.source["filename"] + self.output["file_decorator"]
 		self.path["output"] = os.path.join("hevc", self.output["filename"] + ".mp4")
 		self.path["log"] = os.path.join("performance", self.output["filename"] + ".log")
@@ -80,38 +73,33 @@ class Session():
 
 	#	Object task methods
 
-	def map_options(self):
-		"""	Start with settings based on source resolution and then override defaults based on command-line arguments
+	def options_for_args(self):
+		"""	Override defaults based on command-line arguments
 		"""
-		self.encoder_quality = getattr(self.Settings.RF, self.source["resolution"])
-		self.encoder_options = getattr(self.Settings.ENCOPTS, self.source["resolution"])
-		if self.args.best:
-			self.preset_name = "Best"
-		elif self.args.baseline:
-			self.preset_name = "Baseline"
-		else:
-			self.preset_name = "Default"
+		if self.args.quality:
+			self.encoder_quality = self.args.quality
 
 		if self.args.preset:
 			self.encoder_preset = self.args.preset.lower()
 		else:
 			self.encoder_preset = "slow"
 
-		if self.args.quality:
-			self.encoder_quality = self.args.quality
+		self.output = {"file_decorator": "_RF" + str(self.encoder_quality)}
+		self.output["file_decorator"] += "_{preset}".format(preset=self.encoder_preset.capitalize())
+
+		if self.args.best:
+			self.preset_name = "Best"
+			self.output["file_decorator"] += "_Best"
+		elif self.args.baseline:
+			self.preset_name = "Baseline"
+			self.output["file_decorator"] += "_Baseline"
+		else:
+			self.preset_name = "Default"
 
 		if self.args.small:
 			self.encoder_options += ":tu-intra-depth=3:tu-inter-depth=3"
-
-		self.output = {"file_decorator": "_RF" + str(self.encoder_quality)}
-		self.output["file_decorator"] += "_{preset}".format(preset=self.encoder_preset.capitalize())
-		if self.args.baseline:
-			self.output["file_decorator"] += "_Baseline"
-		elif self.args.best:
-			self.output["file_decorator"] += "_Best"
-
-		if self.args.small:
 			self.output["file_decorator"] += "_Small"
+
 
 	def validate(self):
 		"""	Verifies that no session attributes are null
