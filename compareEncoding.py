@@ -8,7 +8,7 @@ import subprocess
 import sys
 
 parser = argparse.ArgumentParser()
-parser.add_argument("filename", help="Source filename (or \"all\" to compare all files which exist in both source/ and hevc/)")
+parser.add_argument("filename", help="Source filename (or \"all\" to compare all files which exist in both ./source/ and ./hevc/)")
 parser.add_argument("num_frames", nargs="?", default=5, type=int, help="Number of comparison frames to generate")
 parser.add_argument("-s", "--stack", action="store_true", help="Also create 2-up stacked comparison")
 args = parser.parse_args()
@@ -26,19 +26,19 @@ else:
 print("\nComparison frames:\t{frames}".format(frames=args.num_frames))
 
 for source_file in source_files:
-	source_file_path = os.path.relpath("source/{filename}".format(filename=source_file))
-	source_file_size = int(os.path.getsize(source_file_path) / 1000000)
+	source_file_path = os.path.joinpath("source", source_file)
+	source_file_size = int(os.path.getsize(source_file_path)/1000000)
 	source_file_handle = cv2.VideoCapture(source_file_path)
 	hevc_files = [filename for filename in os.listdir("hevc") if filename.startswith(os.path.splitext(source_file)[0])]
 
 	for hevc_file in hevc_files:
 		output_directory = os.path.join(os.path.relpath("comparison"), os.path.splitext(os.path.basename(hevc_file))[0])
-		hevc_file_path = os.path.relpath("hevc/{filename}".format(filename=hevc_file))
+		hevc_file_path = os.path.joinpath("hevc", hevc_file)
 		hevc_file_handle = cv2.VideoCapture(hevc_file_path)
-		hevc_file_size = int(os.path.getsize(hevc_file_path) / 1000000)
+		hevc_file_size = int(os.path.getsize(hevc_file_path)/1000000)
 		compression_ratio = int(100-(hevc_file_size/source_file_size*100))
 		total_frames = source_file_handle.get(cv2.CAP_PROP_FRAME_COUNT)
-		stride = int(total_frames / (args.num_frames + 1))
+		stride = int(total_frames/(args.num_frames+1))
 
 		print("\nFilename:\t\t{filename}".format(filename=hevc_file))
 		if source_file_handle.get(cv2.CAP_PROP_FRAME_COUNT) != hevc_file_handle.get(cv2.CAP_PROP_FRAME_COUNT):

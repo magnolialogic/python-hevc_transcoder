@@ -104,7 +104,7 @@ def symlink(install):
 			print("Use default location? /usr/local/bin")
 			default_location = get_user_response()
 			if default_location:
-				os.symlink(script_realpath, os.path.join("/usr/local/bin", script_name))
+				os.symlink(script_realpath, os.path.join("usr", "local", "bin", script_name))
 				sys.exit("Created symlink to {script_name} in /usr/local/bin\n")
 			else:
 				print("Use alternate $PATH location?")
@@ -168,7 +168,7 @@ def build_source_list(args):
 	print("\nBuilding source list...")
 
 	if args.all:
-		source_files = ["source/" + file for file in os.listdir("source") if os.path.splitext(file)[1].lower() in extensions]
+		source_files = [os.path.join("source", file) for file in os.listdir("source") if os.path.splitext(file)[1].lower() in extensions]
 	else:
 		if os.path.splitext(args.file)[1].lower() in extensions:
 			source_files = [args.file]

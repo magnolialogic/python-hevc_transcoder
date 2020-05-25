@@ -36,7 +36,7 @@ class Session():
 		metadata = json.loads(metadata)["streams"][0]
 
 		# Populate metadata-based attributes
-		self.path = {"source": file}
+		self.path = {"source": os.path.relpath(file)}
 		self.source = {"height": int(metadata["height"]), "width": int(metadata["width"]), "duration": float(metadata["duration"]), "filename": os.path.splitext(os.path.relpath(self.path["source"], "source"))[0], "filesize": os.path.getsize(self.path["source"]), "bitrate": int(metadata["bit_rate"]), "frames": int(metadata["nb_frames"]), "codec": metadata["codec_name"]}
 		height = self.source["height"]
 		if height < 720:
@@ -60,14 +60,14 @@ class Session():
 		self.map_options()
 
 		self.output["filename"] = self.source["filename"] + self.output["file_decorator"]
-		self.path["output"] = "hevc/" + self.output["filename"] + ".mp4"
-		self.path["log"] = "performance/" + self.output["filename"] + ".log"
+		self.path["output"] = os.path.join("hevc", self.output["filename"] + ".mp4")
+		self.path["log"] = os.path.join("performance", self.output["filename"] + ".log")
 
 		# Verify no attributes are None
 		self.validate()
 
 		# Build HandBrakeCLI command
-		self.command = "HandBrakeCLI --encoder-preset {encoder_preset} --preset-import-file {json_path} --preset {preset_name} --quality {quality} --encopts {encopts} --input {source_path} --output {output_path}".format(encoder_preset=self.encoder_preset, json_path=os.path.join(sys.path[0], "src/presets.json"), preset_name=self.preset_name, quality=str(self.encoder_quality), encopts=self.encoder_options, source_path=self.path["source"], output_path=self.path["output"])
+		self.command = "HandBrakeCLI --encoder-preset {encoder_preset} --preset-import-file {json_path} --preset {preset_name} --quality {quality} --encopts {encopts} --input {source_path} --output {output_path}".format(encoder_preset=self.encoder_preset, json_path=os.path.join(sys.path[0], "src", "presets.json"), preset_name=self.preset_name, quality=str(self.encoder_quality), encopts=self.encoder_options, source_path=self.path["source"], output_path=self.path["output"])
 
 	def signal_handler(self, sig, frame):
 		"""	Delete output file if ctrl+c is caught, since file will be corrupt
