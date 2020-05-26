@@ -51,7 +51,7 @@ def link():
 					except PermissionError:
 						sys.exit("\nError: failed to create symlink, operation not permitted.")
 					else:
-						sys.exit("Created symlink to {script_name} in {alternate_path}\n".format(script_name=script_name, alternate_path=alternate_path))
+						sys.exit("\nCreated symlink to {script_name} in {alternate_path}\n".format(script_name=script_name, alternate_path=alternate_path))
 				else:
 					sys.exit("\nError: {alternate_path} not found on $PATH, aborting install.\n".format(alternate_path=alternate_path))
 			else:
@@ -72,7 +72,7 @@ def unlink():
 			except PermissionError:
 				sys.exit("\nError: operation not permitted.")
 			else:
-				print("Unlinked {script_path_location}\n".format(script_path_location=script_path_location))
+				print("\nUnlinked {script_path_location}\n".format(script_path_location=script_path_location))
 		else:
 			sys.exit("Aborting uninstall.\n")
 	else:
