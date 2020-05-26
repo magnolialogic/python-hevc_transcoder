@@ -26,14 +26,14 @@ else:
 print("\nComparison frames:\t{frames}".format(frames=args.num_frames))
 
 for source_file in source_files:
-	source_file_path = os.path.joinpath("source", source_file)
+	source_file_path = os.path.join("source", source_file)
 	source_file_size = int(os.path.getsize(source_file_path)/1000000)
 	source_file_handle = cv2.VideoCapture(source_file_path)
 	hevc_files = [filename for filename in os.listdir("hevc") if filename.startswith(os.path.splitext(source_file)[0])]
 
 	for hevc_file in hevc_files:
 		output_directory = os.path.join(os.path.relpath("comparison"), os.path.splitext(os.path.basename(hevc_file))[0])
-		hevc_file_path = os.path.joinpath("hevc", hevc_file)
+		hevc_file_path = os.path.join("hevc", hevc_file)
 		hevc_file_handle = cv2.VideoCapture(hevc_file_path)
 		hevc_file_size = int(os.path.getsize(hevc_file_path)/1000000)
 		compression_ratio = int(100-(hevc_file_size/source_file_size*100))
