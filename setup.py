@@ -53,7 +53,7 @@ def main():
 					sys.exit("Aborting install.\n")
 		else:
 			sys.exit("Aborting install.\n")
-	
+
 	def unlink():
 		"""	Removes symlink to transcode.py from $PATH
 		"""
@@ -73,7 +73,7 @@ def main():
 		else:
 			sys.exit("Error: {script_path_location} exists on $PATH but is not a symlink, skipping uninstall.\n".format(script_path_location=script_path_location))
 		sys.exit()
-	
+
 	parser = argparse.ArgumentParser(description="Manages $PATH symlink for transcode.py".format(sep=os.sep))
 	install_group = parser.add_mutually_exclusive_group(required=True)
 	install_group.add_argument("--install", action="store_true", help="install symlink to transcode.py on $PATH")
