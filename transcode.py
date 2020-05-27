@@ -19,7 +19,7 @@ def evaluate_args():
 	"""	Exits with error messages if command-line arguments are invalid
 	"""
 	parser = argparse.ArgumentParser(description="Transcodes given file(s) in .{sep}source{sep} to HEVC format.".format(sep=os.sep))
-	files_group = parser.add_mutually_exclusive_group()
+	files_group = parser.add_mutually_exclusive_group(required=True)
 	files_group.add_argument("--file", help="relative path to movie in source directory")
 	files_group.add_argument("--all", action="store_true", help="transcode all supported movies in source directory")
 	parser.add_argument("--quality", type=int, help="HandBrake quality slider value (-12,51)")
@@ -59,21 +59,6 @@ def evaluate_args():
 			os.mkdir(directory)
 
 	return args
-
-def get_user_response():
-	"""	Accepts yes/no answer as user input and returns answer as boolean
-	"""
-	while "need response":
-		reply = str(input(" Proceed? (y/n) ")).lower().strip()
-		if len(reply) > 0:
-			if reply[0] == "y":
-				response = True
-				break
-			if reply[0] == "n":
-				response = False
-				break
-
-	return response
 
 def build_source_list(args):
 	"""	Constructs and returns list of source files
