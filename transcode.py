@@ -11,7 +11,7 @@ if not os.path.isdir(os.path.join(sys.path[0], "lib")):
 sys.path.append(os.path.join(sys.path[0], "lib"))
 try:
 	from TranscodeSession import Session
-	from common import get_user_response
+	from common import get_yn_answer
 except ImportError:
 	sys.exit("FATAL: failed to import dependencies from ./lib/\n")
 
@@ -50,7 +50,7 @@ def evaluate_args():
 		sys.exit("Invalid command-line arguments.\n")
 	elif args.all and args.quality:
 		print("\nWarning! Combining --all and --quality options is not recommended and may not produce optimal HEVC transcodes.")
-		proceed = get_user_response()
+		proceed = get_yn_answer()
 		if not proceed:
 			sys.exit("Aborting invocation with --all and --quality options.\n")
 
