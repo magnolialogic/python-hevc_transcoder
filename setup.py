@@ -9,7 +9,7 @@ if not os.path.isdir(os.path.join(sys.path[0], "lib")):
 	sys.exit("FATAL: ./lib/ not present in parent diectory.\n")
 sys.path.append(os.path.join(sys.path[0], "lib"))
 try:
-	from common import get_user_response
+	from common import get_yn_answer
 except ImportError:
 	sys.exit("FATAL: failed to import dependencies from ./lib/\n")
 
@@ -18,7 +18,7 @@ def main():
 		"""	Creates symlink to transcode.py in /usr/local/bin or alternate $PATH
 		"""
 		print("\nCreate symlink for {script_name} on $PATH?".format(script_name=script_name))
-		proceed = get_user_response()
+		proceed = get_yn_answer()
 		if proceed:
 			if not oct(os.stat(script_realpath).st_mode)[-3:] == 755:
 				try:
@@ -26,7 +26,7 @@ def main():
 				except PermissionError:
 					sys.exit("\nError: failed to make {script_name} executable, operation not permitted.".format(script_name=script_name))
 			print("Use default location? /usr/local/bin")
-			default_location = get_user_response()
+			default_location = get_yn_answer()
 			if default_location:
 				try:
 					os.symlink(script_realpath, os.path.join(os.sep, "usr", "local", "bin", script_name))
@@ -36,7 +36,7 @@ def main():
 					sys.exit("Created symlink to {script_name} in /usr/local/bin\n")
 			else:
 				print("Use alternate $PATH location?")
-				alternate_location = get_user_response()
+				alternate_location = get_yn_answer()
 				if alternate_location:
 					alternate_path = str(input("Alternate $PATH location: (case-sensitive) "))
 					if alternate_path[0] == "~": alternate_path = os.path.expanduser(alternate_path)
@@ -60,7 +60,7 @@ def main():
 		print("\nFound {script_name} on $PATH in {path_dir}\n".format(script_name=script_name, path_dir=path_dir))
 		if os.path.islink(script_path_location):
 			print("Remove symlink to {script_name} in {path_dir}?".format(script_name=script_name, path_dir=path_dir))
-			proceed = get_user_response()
+			proceed = get_yn_answer()
 			if proceed:
 				try:
 					os.unlink(script_path_location)
