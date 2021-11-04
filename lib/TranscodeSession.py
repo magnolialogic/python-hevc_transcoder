@@ -1,4 +1,5 @@
 from datetime import datetime
+import dill
 import json
 import os
 from pprint import pprint
@@ -33,16 +34,20 @@ class Session():
 				"codec": metadata["codec_name"]
 			}
 		if self.source["height"] < 720:
-			self.encoder_quality = 21
+			self.encoder_quality = 18
+			#self.encoder_quality = 21
 			self.encoder_options = "ctu=32:qg-size=16"
 		elif 720 <= self.source["height"] < 1080:
-			self.encoder_quality = 22
+			self.encoder_quality = 20
+			#self.encoder_quality = 22
 			self.encoder_options = "ctu=32:qg-size=32"
 		elif 1080 <= self.source["height"] < 2160:
-			self.encoder_quality = 23
+			self.encoder_quality = 21
+			#self.encoder_quality = 23
 			self.encoder_options = "ctu=64:qg-size=64"
 		elif 2160 <= self.source["height"]:
-			self.encoder_quality = 26
+			self.encoder_quality = 24
+			#self.encoder_quality = 26
 			self.encoder_options = "ctu=64:qg-size=64"
 
 		# Create empty attributes for dynamic session options
@@ -55,6 +60,7 @@ class Session():
 		self.output["filename"] = self.source["filename"] + self.output["file_decorator"]
 		self.path["output"] = os.path.join("hevc", self.output["filename"] + ".mp4")
 		self.path["log"] = os.path.join("performance", self.output["filename"] + ".log")
+		self.path["session"] = os.path.join("performance", self.output["filename"] + ".session")
 
 		# Verify no attributes are None
 		self.validate()
@@ -126,6 +132,8 @@ class Session():
 		self.output["compression_ratio"] = int(100 - (self.output["filesize"] / self.source["filesize"] * 100))
 		self.fps = self.source["frames"] / self.time["duration"].seconds
 		self.log(self.time["duration"], self.fps, self.output["compression_ratio"])
+		with open(self.path["session"], "wb") as session_file:
+			dill.dump(self, session_file)
 		print("\n\n\n\n\n")
 		if self.args.delete:
 			self.cleanup()
@@ -134,9 +142,9 @@ class Session():
 		"""	Summarizes transcode session for screen and log
 		"""
 		summary = "{duration}\n{fps:.2f} fps\n{compression_ratio}% reduction ({source_size}mb to {output_size}mb)".format(duration=self.time["duration"], fps=self.fps, compression_ratio=self.output["compression_ratio"], source_size=int(self.source["filesize"] / 1000000), output_size=int(self.output["filesize"] / 1000000))
-		with open(self.path["log"], "w") as logfile:
-			logfile.write(summary + "\n\n" + self.command + "\n\n")
-			pprint(vars(self), logfile)
+		with open(self.path["log"], "w") as log_file:
+			log_file.write(summary + "\n\n" + self.command + "\n\n")
+			pprint(vars(self), log_file)
 
 		print(summary)
 
@@ -148,6 +156,19 @@ class Session():
 				os.remove(self.path["output"])
 			except FileNotFoundError:
 				print("Session.cleanup():", self.path["output"], "does not exist.")
+
+	def repair(self):
+		with open(os.path.join("performance", self.output["filename"] + ".log"), "r") as log_file:
+			self.output["filesize"] = os.path.getsize(self.path["output"])
+			self.time = {"duration": log_file.readline().rstrip()}
+			self.fps = "{:0.2f}".format(float(log_file.readline().rstrip().split(" ")[0]))
+			self.output["compression_ratio"] = log_file.readline().rstrip().split(" ")[0][:-1]
+			if self.output["compression_ratio"] == "":
+				self.output["filesize"] = os.path.getsize(self.path["output"])
+				self.output["compression_ratio"] = int(100 - (self.output["filesize"] / self.source["filesize"] * 100))
+		with open(self.path["session"], "wb") as session_file:
+			dill.dump(self, session_file)
+		print("Wrote " + self.path["session"])
 
 # Check for Python 3.8 (required for shlex usage)
 if not (sys.version_info[0] >= 3 and sys.version_info[1] >= 8):

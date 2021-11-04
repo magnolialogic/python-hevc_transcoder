@@ -91,6 +91,10 @@ def build_source_list(args):
 
 	return source_files
 
+
+# CHECK IF FILE IS HEVC OR NOT!
+
+
 def main():
 	args = evaluate_args()
 	source_files = build_source_list(args)

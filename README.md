@@ -68,8 +68,12 @@ optional arguments:
 ### Dependencies:
 * python >= 3.8 at `/usr/local/bin/python3`
 * [HandBrakeCLI](https://handbrake.fr/downloads2.php) and [ffmpeg](https://www.ffmpeg.org/download.html) on your `$PATH`
-* [numpy](https://pypi.org/project/numpy/)
 * [cv2](https://pypi.org/project/opencv-python/)
+* [dill](https://pypi.org/project/dill/)
+* [imutils](https://pypi.org/project/imutils/)
+* [numpy](https://pypi.org/project/numpy/)
+* [scikit-image](https://pypi.org/project/scikit-image/)
+
 
 <br>
 <br>
