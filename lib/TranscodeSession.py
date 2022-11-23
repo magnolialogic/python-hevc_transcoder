@@ -101,7 +101,7 @@ class Session():
 			self.preset_name = "Baseline"
 			self.output["file_decorator"] += "_Baseline"
 		else:
-			self.preset_name = "Default"
+			self.preset_name = "Best"
 
 		if self.args.small:
 			self.encoder_options += ":tu-intra-depth=3:tu-inter-depth=3"
