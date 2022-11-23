@@ -89,7 +89,7 @@ class Session():
 		if self.args.preset:
 			self.encoder_preset = self.args.preset.lower()
 		else:
-			self.encoder_preset = "slow"
+			self.encoder_preset = "medium"
 
 		self.output = {"file_decorator": "_RF" + str(self.encoder_quality)}
 		self.output["file_decorator"] += "_{preset}".format(preset=self.encoder_preset.capitalize())
