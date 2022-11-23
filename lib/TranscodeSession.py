@@ -19,7 +19,8 @@ class Session():
 		# Get source file metadata
 		cmd = "ffprobe -v quiet -print_format json -show_streams " + file
 		metadata = subprocess.check_output(shlex.split(cmd)).decode("utf-8")
-		metadata = json.loads(metadata)["streams"][0]
+		metadata = json.loads(metadata)["streams"]
+		metadata = next(stream for stream in metadata if stream["codec_name"] == "h264")
 
 		# Populate metadata-based attributes
 		self.path = {"source": os.path.relpath(file)}
